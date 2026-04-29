@@ -1,24 +1,21 @@
-import axios from 'axios';
+import apiClient from '../../../api/apiClient';
 import { ChildFormValues } from '../schemas/childForm.schema';
 import { Child } from '../types/child.types';
 
-const API_URL = 'http://127.0.0.1:3001/api/children';
-
 export const childrenApi = {
   getAll: async (): Promise<Child[]> => {
-    const res = await axios.get(API_URL);
+    const res = await apiClient.get('/children');
     return res.data;
   },
   create: async (data: ChildFormValues): Promise<any> => {
-    const res = await axios.post(API_URL, data);
+    const res = await apiClient.post('/children', data);
     return res.data;
   },
   update: async (id: string, data: ChildFormValues): Promise<any> => {
-    const res = await axios.put(`${API_URL}/${id}`, data);
+    const res = await apiClient.put(`/children/${id}`, data);
     return res.data;
   },
   delete: async (id: string): Promise<void> => {
-    await axios.delete(`${API_URL}/${id}`);
+    await apiClient.delete(`/children/${id}`);
   }
-  };
-
+};

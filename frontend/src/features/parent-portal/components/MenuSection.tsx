@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Apple, Clock, Flame, Zap, Target, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion } from 'motion/react';
-import axios from 'axios';
+import apiClient from '../../../api/apiClient';
 
-const API_BASE = 'http://localhost:3001/api';
 
 const MEAL_LABELS: Record<string, string> = {
   'BREAKFAST': 'Nonushta',
@@ -28,7 +27,7 @@ export const MenuSection = ({ data: initialData, childId }: any) => {
     setLoading(true);
     try {
       const dateStr = date.toISOString().split('T')[0];
-      const res = await axios.get(`${API_BASE}/parent-portal/menu/${childId}/${dateStr}`);
+      const res = await apiClient.get(`/parent-portal/menu/${childId}/${dateStr}`);
       setMenu(res.data);
     } catch (err) {
       console.error(err);

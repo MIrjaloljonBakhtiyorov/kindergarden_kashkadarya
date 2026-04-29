@@ -14,11 +14,10 @@ import {
   ShieldCheck,
   ClipboardList
 } from 'lucide-react';
-import axios from 'axios';
+import apiClient from '../../api/apiClient';
 import { useNotification } from '../../context/NotificationContext';
 import { MOCK_CHECKLISTS } from '../../constants/mockData';
 
-const API_BASE = 'http://localhost:3001/api';
 
 const STATUS_CONFIG: Record<string, { label: string, color: string, icon: any }> = {
   'PENDING': { label: 'Kutilmoqda', color: 'bg-slate-100 text-slate-600', icon: Clock },
@@ -56,7 +55,7 @@ const KitchenManagerView: React.FC = () => {
 
   const fetchTasks = async () => {
     try {
-      const res = await axios.get(`${API_BASE}/kitchen/tasks/${selectedDate}`);
+      const res = await apiClient.get(`/kitchen/tasks/${selectedDate}`);
       setTasks(res.data);
     } catch (err) {
       console.error(err);
@@ -71,7 +70,7 @@ const KitchenManagerView: React.FC = () => {
       if (status === 'COOKING_STARTED') data.start_time = new Date().toISOString();
       if (status === 'SERVED') data.served_time = new Date().toISOString();
 
-      await axios.post(`${API_BASE}/kitchen/tasks/${menuId}/status`, data);
+      await apiClient.post(`/kitchen/tasks/${menuId}/status`, data);
       showNotification(`Holat yangilandi: ${STATUS_CONFIG[status].label}`, 'success');
       fetchTasks();
       setEditTask(null);

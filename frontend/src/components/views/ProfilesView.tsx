@@ -284,7 +284,7 @@ const ProfilesView: React.FC = () => {
               initial={{ opacity: 0, scale: 0.9, y: 30 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 30 }}
-              className="bg-white w-full max-w-xl rounded-[3rem] shadow-[0_32px_128px_rgba(0,0,0,0.5)] relative z-10 overflow-hidden border border-white/20"
+              className="bg-white w-full max-w-xl rounded-[10px] shadow-[0_32px_128px_rgba(0,0,0,0.5)] relative z-10 overflow-hidden border border-white/20"
             >
               <div className="h-2 bg-brand-primary"></div>
               <div className="p-10 sm:p-14 overflow-y-auto max-h-[85vh] custom-scrollbar">

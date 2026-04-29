@@ -1,574 +1,602 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNotification } from '../../context/NotificationContext';
-import axios from 'axios';
+import apiClient from '../../api/apiClient';
 import { 
-  Stethoscope, 
-  Save, 
-  ArrowLeft,
-  Users,
-  Scale,
-  Ruler,
-  AlertTriangle,
-  History,
-  Activity,
-  Thermometer,
-  Utensils,
-  Coffee,
-  UserRound,
-  ShieldCheck,
-  PieChart,
-  MilkOff
+  Users, AlertTriangle, ShieldCheck, HeartPulse, Activity, 
+  ArrowLeft, Search, Filter, Eye, Edit3, PlusCircle,
+  Thermometer, Scale, Ruler, FileText, Calendar, Clock,
+  Stethoscope, ChevronLeft, ChevronRight, AlertCircle, Plus, History
 } from 'lucide-react';
-
-const API_BASE = 'http://localhost:3001/api';
-
-interface MedicalData {
-  weight: string;
-  height: string;
-  temperature: string;
-  allergy: string;
-  isAllergic: boolean;
-  isSick: boolean;
-  notes: string;
-}
+import { motion, AnimatePresence } from 'motion/react';
 
 const NurseView: React.FC = () => {
   const { showNotification } = useNotification();
-  const [groups, setGroups] = useState<any[]>([]);
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
-  const [children, setChildren] = useState<any[]>([]);
   
-  const [medicalRecords, setMedicalRecords] = useState<Record<string, MedicalData>>({});
-  const [archive, setArchive] = useState<any[]>([]);
-  const [allergyWatchlist, setAllergyWatchlist] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [globalStats, setGlobalStats] = useState({
-    total: 0,
-    present: 0,
-    absent: 0,
-    checked: 0,
-    notChecked: 0,
-    sick: 0,
-    healthy: 0,
-    age1_3: 0,
-    age3_7: 0,
-    allergyCount: 0
+  // Data States
+  const [allChildren, setAllChildren] = useState<any[]>([]);
+  const [groups, setGroups] = useState<any[]>([]);
+  const [allergies, setAllergies] = useState<any[]>([]);
+  const [history, setHistory] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // UI States
+  const [viewMode, setViewMode] = useState<'DASHBOARD' | 'GROUP' | 'PROFILE'>('DASHBOARD');
+  const [selectedGroup, setSelectedGroup] = useState<any | null>(null);
+  const [selectedChild, setSelectedChild] = useState<any | null>(null);
+  
+  // Modal States
+  const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
+  const [recordForm, setRecordForm] = useState({
+    child_id: '',
+    status: 'Sog\'lom', // 'Sog\'lom' | 'Kasal'
+    hasAllergy: 'Yo\'q', // 'Yo\'q' | 'Bor'
+    allergyType: '',
+    illnessType: '',
+    notes: '',
+    weight: '',
+    height: '',
+    temperature: ''
   });
 
+  const [searchQuery, setSearchQuery] = useState('');
+
   useEffect(() => {
-    fetchGroups();
-    fetchArchive();
-    fetchGlobalStats();
-    fetchAllergies();
+    fetchAllData();
   }, []);
 
-  const fetchAllergies = async () => {
-    try {
-      const res = await axios.get(`${API_BASE}/health/allergies`);
-      setAllergyWatchlist(res.data);
-    } catch (err) {
-      console.error("Error fetching allergies:", err);
-    }
-  };
-
-  const fetchGlobalStats = async () => {
-    try {
-      const res = await axios.get(`${API_BASE}/attendance/today-stats`);
-      setGlobalStats(res.data);
-    } catch (err) {
-      console.error("Error fetching global stats:", err);
-    }
-  };
-
-  const fetchGroups = async () => {
-    try {
-      const res = await axios.get(`${API_BASE}/groups`);
-      setGroups(res.data);
-    } catch (err) {
-      showNotification("Guruhlarni yuklashda xatolik", "error");
-    }
-  };
-
-  const fetchArchive = async () => {
-    try {
-      const res = await axios.get(`${API_BASE}/health/archive`);
-      setArchive(res.data);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const fetchChildren = async (groupId: string) => {
+  const fetchAllData = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API_BASE}/children`);
-      const filtered = res.data.filter((c: any) => c.group_id === groupId);
-      setChildren(filtered);
-      
-      const records: Record<string, MedicalData> = {};
-      filtered.forEach((c: any) => {
-        records[c.id] = {
-          weight: c.weight?.toString() || '',
-          height: c.height?.toString() || '',
-          temperature: '',
-          allergy: c.allergies || '',
-          isAllergic: !!c.allergies,
-          isSick: false,
-          notes: c.medical_notes || ''
-        };
-      });
-      setMedicalRecords(records);
+      const [childrenRes, groupsRes, allergiesRes] = await Promise.all([
+        apiClient.get('/children'),
+        apiClient.get('/groups'),
+        apiClient.get('/health/allergies')
+      ]);
+      setAllChildren(childrenRes.data);
+      setGroups(groupsRes.data);
+      setAllergies(allergiesRes.data);
     } catch (err) {
-      showNotification("Bolalar ro'yxatini yuklashda xatolik", "error");
+      showNotification("Ma'lumotlarni yuklashda xatolik", "error");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGroupSelect = (groupId: string) => {
-    setSelectedGroupId(groupId);
-    fetchChildren(groupId);
+  const fetchGroupHistory = async (groupId: string) => {
+    try {
+      const res = await apiClient.get(`/health/history/${groupId}`);
+      setHistory(res.data);
+    } catch (err) {
+      console.error("Xatolik:", err);
+    }
   };
 
-  const selectedGroup = useMemo(() => {
-    return groups.find(g => g.id === selectedGroupId);
-  }, [groups, selectedGroupId]);
-
+  // --- KPI Calculations ---
   const stats = useMemo(() => {
-    const total = children.length;
-    const records = Object.values(medicalRecords) as MedicalData[];
-    const sickCount = records.filter(r => r.isSick).length;
-    const measuredCount = records.filter(r => r.weight || r.height || r.temperature).length;
+    const total = allChildren.length;
+    // Basic age calculation from birth_date or age_category
+    const age1_3 = allChildren.filter(c => c.age_category === '1-3 yosh' || c.age_category === 'Kichik yosh').length;
+    const age3_7 = allChildren.filter(c => c.age_category === '3-7 yosh' || c.age_category === 'Katta yosh' || c.age_category === 'Tayyorlov guruh').length;
+    // In our generic schema, 'is_allergic' might not be directly on child object, we check allergies field or watchlist
+    const allergyCount = allChildren.filter(c => c.allergies && c.allergies.trim() !== '').length;
+    // We assume 'status' or checking recent history for 'Kasal'. We'll approximate from allChildren if possible, or use a default if not tracked directly.
+    const sickCount = allChildren.filter(c => c.medical_notes?.toLowerCase().includes('kasal') || c.status === 'SICK').length || 0; // Fallback to 0 if not tracked globally this way
 
-    return {
-      total,
-      sickCount,
-      healthyCount: total - sickCount,
-      measuredCount
-    };
-  }, [medicalRecords, children]);
+    return { total, age1_3, age3_7, sickCount, allergyCount };
+  }, [allChildren]);
 
-  const handleDataChange = (childId: string, field: keyof MedicalData, value: any) => {
-    setMedicalRecords(prev => ({
-      ...prev,
-      [childId]: {
-        ...prev[childId],
-        [field]: value
-      }
-    }));
+  const groupSummaries = useMemo(() => {
+    return groups.map(g => {
+      const groupChildren = allChildren.filter(c => c.group_id === g.id);
+      const sick = groupChildren.filter(c => c.medical_notes?.toLowerCase().includes('kasal') || c.status === 'SICK').length;
+      const allergy = groupChildren.filter(c => c.allergies && c.allergies.trim() !== '').length;
+      return { ...g, total: groupChildren.length, sick, allergy };
+    });
+  }, [groups, allChildren]);
+
+  // --- Handlers ---
+  const handleOpenGroup = (group: any) => {
+    setSelectedGroup(group);
+    fetchGroupHistory(group.id);
+    setViewMode('GROUP');
   };
 
-  const handleSave = async () => {
+  const handleOpenProfile = (child: any) => {
+    setSelectedChild(child);
+    setViewMode('PROFILE');
+  };
+
+  const handleOpenRecordModal = (child: any) => {
+    setSelectedChild(child);
+    setRecordForm({
+      child_id: child.id,
+      status: (child.status === 'SICK' || child.medical_notes?.toLowerCase().includes('kasal')) ? 'Kasal' : 'Sog\'lom',
+      hasAllergy: (child.allergies && child.allergies.trim() !== '') ? 'Bor' : 'Yo\'q',
+      allergyType: child.allergies || '',
+      illnessType: '',
+      notes: '',
+      weight: child.weight || '',
+      height: child.height || '',
+      temperature: ''
+    });
+    setIsRecordModalOpen(true);
+  };
+
+  const handleSaveRecord = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!selectedGroup) return;
 
-    const recordsToSave = Object.entries(medicalRecords).map(([childId, recordData]) => {
-      const data = recordData as MedicalData;
-      return {
-        child_id: childId,
-        weight: parseFloat(data.weight) || null,
-        height: parseFloat(data.height) || null,
-        temperature: parseFloat(data.temperature) || null,
-        allergy: data.allergy,
-        is_sick: data.isSick,
-        notes: data.notes
-      };
-    });
-
     try {
-      await axios.post(`${API_BASE}/health/batch`, {
+      const isSick = recordForm.status === 'Kasal';
+      const allergyStr = recordForm.hasAllergy === 'Bor' ? recordForm.allergyType : '';
+      const finalNotes = isSick && recordForm.illnessType ? `Kasallik: ${recordForm.illnessType} | ${recordForm.notes}` : recordForm.notes;
+
+      await apiClient.post('/health/batch', {
         group_name: selectedGroup.name,
-        records: recordsToSave
+        records: [{
+          child_id: recordForm.child_id,
+          weight: parseFloat(recordForm.weight) || null,
+          height: parseFloat(recordForm.height) || null,
+          temperature: parseFloat(recordForm.temperature) || null,
+          allergy: allergyStr,
+          is_sick: isSick,
+          notes: finalNotes,
+          is_allergic: recordForm.hasAllergy === 'Bor'
+        }]
       });
-      showNotification("Ma'lumotlar muvaffaqiyatli saqlandi va arxivlandi!", "success");
-      fetchArchive();
+      
+      showNotification("Tibbiy qayd saqlandi!", "success");
+      setIsRecordModalOpen(false);
+      fetchAllData();
+      fetchGroupHistory(selectedGroup.id);
     } catch (err) {
       showNotification("Saqlashda xatolik yuz berdi", "error");
     }
   };
 
-  if (!selectedGroupId || !selectedGroup) {
-    return (
-      <div className="p-8 animate-in fade-in max-w-6xl mx-auto space-y-10">
-        <header>
-          <h2 className="text-4xl font-black text-brand-depth tracking-tight text-center">Tibbiy nazorat</h2>
-          <p className="text-brand-muted font-bold uppercase text-[10px] tracking-widest mt-2 text-center">Bolalarning salomatligi va rivojlanishi monitoringi</p>
-        </header>
+  const currentDate = new Date().toLocaleDateString('uz-UZ', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-        {/* Global Summary Dashboard */}
-        <div className="space-y-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
-            <div className="bg-white p-4 rounded-[2rem] border border-brand-border shadow-sm text-center">
-              <Users className="mx-auto mb-2 text-brand-primary" size={18} />
-              <p className="text-[7px] font-black text-brand-muted uppercase tracking-widest">Jami</p>
-              <p className="text-xl font-black text-brand-depth">{globalStats.total}</p>
-            </div>
-            <div className="bg-emerald-50/50 p-4 rounded-[2rem] border border-emerald-100 text-center">
-              <Activity className="mx-auto mb-2 text-emerald-600" size={18} />
-              <p className="text-[7px] font-black text-emerald-600 uppercase tracking-widest">Kelgan</p>
-              <p className="text-xl font-black text-emerald-600">{globalStats.present}</p>
-            </div>
-            <div className="bg-rose-50/50 p-4 rounded-[2rem] border border-rose-100 text-center">
-              <AlertTriangle className="mx-auto mb-2 text-rose-500" size={18} />
-              <p className="text-[7px] font-black text-rose-500 uppercase tracking-widest">Kelmagan</p>
-              <p className="text-xl font-black text-rose-500">{globalStats.absent}</p>
-            </div>
-            <div className="bg-blue-50/50 p-4 rounded-[2rem] border border-blue-100 text-center">
-              <ShieldCheck className="mx-auto mb-2 text-blue-600" size={18} />
-              <p className="text-[7px] font-black text-blue-600 uppercase tracking-widest">Ko'rikdan</p>
-              <p className="text-xl font-black text-blue-600">{(globalStats as any).checked || 0}</p>
-            </div>
-            <div className="bg-emerald-100/30 p-4 rounded-[2rem] border border-emerald-200 text-center">
-              <Activity className="mx-auto mb-2 text-emerald-700" size={18} />
-              <p className="text-[7px] font-black text-emerald-700 uppercase tracking-widest">Sog'lom</p>
-              <p className="text-xl font-black text-emerald-700">{(globalStats as any).healthy || 0}</p>
-            </div>
-            <div className="bg-rose-100/30 p-4 rounded-[2rem] border border-rose-200 text-center">
-              <AlertTriangle className="mx-auto mb-2 text-rose-700" size={18} />
-              <p className="text-[7px] font-black text-rose-700 uppercase tracking-widest">Nosog'lom</p>
-              <p className="text-xl font-black text-rose-700">{(globalStats as any).sick || 0}</p>
-            </div>
-            <div className="bg-orange-50/50 p-4 rounded-[2rem] border border-orange-100 text-center">
-              <MilkOff className="mx-auto mb-2 text-orange-600" size={18} />
-              <p className="text-[7px] font-black text-orange-600 uppercase tracking-widest">Allergiya</p>
-              <p className="text-xl font-black text-orange-600">{(globalStats as any).allergyCount || 0}</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 bg-white rounded-[2.5rem] border border-brand-border shadow-sm overflow-hidden p-6">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-brand-primary">
-                  <PieChart size={20} />
-                </div>
-                <h3 className="font-black text-brand-depth uppercase text-xs tracking-widest">Yosh toifasi statistikasi</h3>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="flex items-center justify-between p-5 bg-slate-50 rounded-3xl border border-brand-border">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-blue-500 text-white rounded-xl flex items-center justify-center font-black text-sm">1-3</div>
-                    <div>
-                      <p className="text-[8px] font-black text-brand-muted uppercase tracking-widest">Kichik yoshdagilar</p>
-                      <p className="text-base font-bold text-brand-depth">1 - 3 yosh</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-black text-blue-600">{(globalStats as any).age1_3 || 0}</p>
-                    <p className="text-[7px] font-bold text-brand-muted uppercase tracking-widest">ta bola</p>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between p-5 bg-slate-50 rounded-3xl border border-brand-border">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-emerald-500 text-white rounded-xl flex items-center justify-center font-black text-sm">3-7</div>
-                    <div>
-                      <p className="text-[8px] font-black text-brand-muted uppercase tracking-widest">Katta yoshdagilar</p>
-                      <p className="text-base font-bold text-brand-depth">3 - 7 yosh</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-black text-emerald-600">{(globalStats as any).age3_7 || 0}</p>
-                    <p className="text-[7px] font-bold text-brand-muted uppercase tracking-widest">ta bola</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-[2.5rem] border border-brand-border shadow-sm overflow-hidden">
-              <div className="p-6 border-b border-brand-border bg-orange-50/30 flex items-center justify-between">
-                <h3 className="font-black text-orange-700 uppercase text-[10px] tracking-widest flex items-center gap-2">
-                  <MilkOff size={16} /> Allergiya nazorati
-                </h3>
-                <span className="bg-orange-500 text-white text-[10px] font-black px-2 py-1 rounded-lg">{allergyWatchlist.length}</span>
-              </div>
-              <div className="max-h-[160px] overflow-y-auto p-4 space-y-3">
-                {allergyWatchlist.length > 0 ? allergyWatchlist.map((c, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-brand-border">
-                    <div>
-                      <p className="text-[11px] font-black text-brand-depth">{c.first_name} {c.last_name}</p>
-                      <p className="text-[9px] font-bold text-brand-muted">{c.group_name}</p>
-                    </div>
-                    <div className="bg-orange-100 text-orange-700 text-[9px] font-black px-2 py-1 rounded-md max-w-[100px] truncate">
-                      {c.allergies}
-                    </div>
-                  </div>
-                )) : (
-                  <p className="text-[10px] text-brand-muted italic text-center py-4">Allergiya aniqlanmadi</p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {groups.map(g => (
-            <button 
-              key={g.id} 
-              onClick={() => handleGroupSelect(g.id)} 
-              className="p-8 bg-white border border-brand-border rounded-[2.5rem] text-left transition-all hover:border-brand-primary hover:shadow-2xl hover:shadow-brand-primary/5 group relative overflow-hidden"
-            >
-              <div className="flex justify-between items-start mb-6">
-                <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center group-hover:bg-brand-primary/10 group-hover:text-brand-primary transition-all">
-                  <Stethoscope size={28} />
-                </div>
-                <div className="text-right">
-                  <p className="text-[10px] font-black text-brand-muted uppercase tracking-widest">Bolalar soni</p>
-                  <p className="text-2xl font-black text-brand-depth">{(g.children || []).length}</p>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <h3 className="font-black text-brand-depth text-2xl group-hover:text-brand-primary transition-colors">{g.name}</h3>
-                
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center gap-2 text-brand-muted">
-                    <UserRound size={14} className="text-brand-primary/60" />
-                    <span className="text-[11px] font-bold uppercase tracking-tight">{g.teacher_name || 'Tarbiyachi tayinlanmagan'}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-brand-muted">
-                    <Scale size={14} className="text-brand-primary/60" />
-                    <span className="text-[11px] font-bold uppercase tracking-tight">{g.age_limit || 'Yosh toifasi yo\'q'}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-6 pt-6 border-t border-brand-border flex justify-between items-center">
-                <span className="text-[9px] font-black text-brand-primary uppercase tracking-widest">Guruhni tanlash</span>
-                <ArrowLeft className="rotate-180 text-brand-primary" size={16} />
-              </div>
-
-              {/* Decorative element */}
-              <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-brand-primary/5 rounded-full blur-2xl group-hover:bg-brand-primary/10 transition-all"></div>
-            </button>
-          ))}
-        </div>
-
-        <div className="bg-white rounded-[2.5rem] border border-brand-border shadow-sm overflow-hidden mt-12">
-          <div className="p-8 border-b border-brand-border bg-slate-50/30 flex items-center justify-between">
-             <h3 className="font-black text-brand-depth uppercase text-xs tracking-widest flex items-center gap-2">
-               <History size={18} className="text-brand-primary" />
-               Tibbiy arxiv (Kunlik hisobotlar)
-             </h3>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="text-[10px] text-brand-muted uppercase font-black tracking-widest border-b border-brand-border bg-slate-50/10">
-                  <th className="py-6 px-8">Sana</th>
-                  <th className="py-6 px-8">Guruh</th>
-                  <th className="py-6 px-8">O'lchandi</th>
-                  <th className="py-6 px-8">Nosog'lom / Sog'lom</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {archive.length > 0 ? archive.map((a, idx) => (
-                  <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="py-5 px-8 font-bold text-brand-depth">{a.date}</td>
-                    <td className="py-5 px-8 text-brand-slate font-bold">{a.group_name}</td>
-                    <td className="py-5 px-8 text-blue-600 font-black">{a.total_measured} ta</td>
-                    <td className="py-5 px-8">
-                      <span className="text-rose-500 font-black">{a.sick_count}</span> / <span className="text-emerald-600 font-black">{a.total_measured - a.sick_count}</span>
-                    </td>
-                  </tr>
-                )) : (
-                  <tr>
-                    <td colSpan={4} className="py-12 text-center text-brand-muted font-bold italic uppercase text-[10px] tracking-widest">
-                      Hozircha arxivda ma'lumot yo'q
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    );
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-screen text-brand-primary animate-pulse font-black text-xl">Yuklanmoqda...</div>;
   }
 
   return (
-    <div className="p-8 animate-in fade-in space-y-10 max-w-7xl mx-auto">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-8 rounded-[2.5rem] border border-brand-border shadow-xl shadow-slate-200/50 gap-6">
-        <div className="space-y-1">
-          <button onClick={() => setSelectedGroupId(null)} className="text-brand-primary font-black text-[10px] uppercase tracking-widest flex items-center gap-2 mb-2 hover:translate-x-[-4px] transition-transform">
-            <ArrowLeft size={14} /> Guruhlarga qaytish
-          </button>
-          <h2 className="text-3xl font-black text-brand-depth tracking-tight">"{selectedGroup.name}" - Tibbiy jadval</h2>
+    <div className="min-h-screen bg-slate-50/50 p-4 md:p-8 animate-in fade-in duration-700">
+      
+      {/* HEADER */}
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-8 rounded-[2rem] shadow-sm border border-brand-border mb-8 gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 bg-brand-primary/10 text-brand-primary flex items-center justify-center rounded-2xl">
+            <HeartPulse size={28} />
+          </div>
+          <div>
+            <h1 className="text-3xl font-black text-brand-depth tracking-tight">Hamshira Paneli</h1>
+            <p className="text-brand-muted text-xs font-black uppercase tracking-widest mt-1">Bugungi sog'liq monitoringi</p>
+          </div>
         </div>
-        <button 
-          onClick={handleSave} 
-          className="w-full md:w-auto bg-emerald-500 text-white font-black uppercase text-xs tracking-widest px-10 py-5 rounded-2xl hover:shadow-2xl hover:shadow-emerald-500/30 transition-all active:scale-95 flex items-center justify-center gap-2"
-        >
-          <Save size={18} /> Saqlash va Arxivlash
-        </button>
-      </div>
+        <div className="flex items-center gap-6">
+          <div className="text-right hidden md:block">
+            <p className="text-brand-depth font-bold">{currentDate}</p>
+            <p className="text-brand-muted text-[10px] font-black uppercase tracking-widest">Tizim vaqti</p>
+          </div>
+          <div className="px-4 py-2 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-100 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span className="text-[10px] font-black uppercase tracking-widest">Real-time</span>
+          </div>
+        </div>
+      </header>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-[2rem] border border-brand-border shadow-sm text-center">
-          <Users className="mx-auto mb-2 text-brand-muted" size={18} />
-          <p className="text-[9px] font-black text-brand-muted uppercase tracking-widest">Guruhda</p>
-          <p className="text-3xl font-black text-brand-depth">{stats.total}</p>
-        </div>
-        <div className="bg-white p-6 rounded-[2rem] border border-brand-border shadow-sm text-center">
-          <Activity className="mx-auto mb-2 text-blue-500" size={18} />
-          <p className="text-[9px] font-black text-brand-muted uppercase tracking-widest">O'lchandi</p>
-          <p className="text-3xl font-black text-brand-depth text-blue-500">{stats.measuredCount}</p>
-        </div>
-        <div className="bg-rose-50/50 p-6 rounded-[2rem] border border-rose-100 text-center">
-          <AlertTriangle className="mx-auto mb-2 text-rose-500" size={18} />
-          <p className="text-[9px] font-black text-rose-500 uppercase tracking-widest">Kasal / Shikoyat</p>
-          <p className="text-3xl font-black text-rose-500">{stats.sickCount}</p>
-        </div>
-        <div className="bg-emerald-50/50 p-6 rounded-[2rem] border border-emerald-100 text-center">
-          <Activity className="mx-auto mb-2 text-emerald-600" size={18} />
-          <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Sog'lom</p>
-          <p className="text-3xl font-black text-emerald-600">{stats.healthyCount}</p>
-        </div>
-      </div>
+      {/* DASHBOARD VIEW */}
+      <AnimatePresence mode="wait">
+        {viewMode === 'DASHBOARD' && (
+          <motion.div key="dashboard" initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-20}} className="space-y-8">
+            
+            {/* KPI CARDS */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              <div className="bg-white p-6 rounded-[1.5rem] border border-brand-border shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="w-10 h-10 bg-blue-50 text-blue-500 rounded-xl flex items-center justify-center"><Users size={20}/></div>
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-brand-muted uppercase tracking-widest mb-1">Jami bolalar</p>
+                  <p className="text-3xl font-black text-brand-depth">{stats.total}</p>
+                </div>
+              </div>
+              <div className="bg-white p-6 rounded-[1.5rem] border border-brand-border shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="w-10 h-10 bg-emerald-50 text-emerald-500 rounded-xl flex items-center justify-center"><ShieldCheck size={20}/></div>
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-brand-muted uppercase tracking-widest mb-1">1-3 yosh</p>
+                  <p className="text-3xl font-black text-brand-depth">{stats.age1_3}</p>
+                </div>
+              </div>
+              <div className="bg-white p-6 rounded-[1.5rem] border border-brand-border shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="w-10 h-10 bg-indigo-50 text-indigo-500 rounded-xl flex items-center justify-center"><Activity size={20}/></div>
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-brand-muted uppercase tracking-widest mb-1">3-7 yosh</p>
+                  <p className="text-3xl font-black text-brand-depth">{stats.age3_7}</p>
+                </div>
+              </div>
+              <div className="bg-white p-6 rounded-[1.5rem] border border-brand-border shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="w-10 h-10 bg-rose-50 text-rose-500 rounded-xl flex items-center justify-center"><AlertTriangle size={20}/></div>
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-brand-muted uppercase tracking-widest mb-1">Kasal bolalar</p>
+                  <p className="text-3xl font-black text-rose-500">{stats.sickCount}</p>
+                </div>
+              </div>
+              <div className="bg-white p-6 rounded-[1.5rem] border border-brand-border shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="w-10 h-10 bg-amber-50 text-amber-500 rounded-xl flex items-center justify-center"><Thermometer size={20}/></div>
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-brand-muted uppercase tracking-widest mb-1">Allergiyasi bor</p>
+                  <p className="text-3xl font-black text-amber-500">{stats.allergyCount}</p>
+                </div>
+              </div>
+            </div>
 
-      <div className="bg-white rounded-[2.5rem] border border-brand-border shadow-sm overflow-hidden">
-        <div className="p-8 border-b border-brand-border bg-slate-50/30">
-          <h3 className="font-black text-brand-depth uppercase text-xs tracking-widest flex items-center gap-2">
-            <Stethoscope size={18} className="text-brand-primary" />
-            Tibbiy nazorat jadvali
-          </h3>
-        </div>
-        <div className="overflow-x-auto">
-          {loading ? (
-            <div className="p-20 text-center font-bold text-brand-muted animate-pulse">Yuklanmoqda...</div>
-          ) : (
-            <table className="w-full text-left min-w-[1100px]">
-              <thead>
-                <tr className="text-[10px] text-brand-muted uppercase font-black tracking-widest border-b border-brand-border bg-slate-100/50">
-                  <th className="py-6 px-8 bg-slate-100/30">Umumiy ma'lumot</th>
-                  <th colSpan={2} className="py-6 px-4 text-center bg-blue-50/50 border-x border-brand-border">
-                    <div className="flex items-center justify-center gap-2 text-blue-600">
-                      <Scale size={14} /> Oylik rivojlanish (Growth)
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* GROUP HEALTH SUMMARY */}
+              <div className="lg:col-span-2 space-y-6">
+                <h3 className="text-xl font-black text-brand-depth">Guruhlar nazorati</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {groupSummaries.map(g => (
+                    <div 
+                      key={g.id} 
+                      onClick={() => handleOpenGroup(g)}
+                      className="bg-white p-6 rounded-[2rem] border border-brand-border shadow-sm hover:shadow-xl hover:border-brand-primary/30 transition-all cursor-pointer group"
+                    >
+                      <div className="flex justify-between items-center mb-4">
+                        <h4 className="text-lg font-black text-brand-depth group-hover:text-brand-primary transition-colors">{g.name}</h4>
+                        <ChevronRight className="text-brand-slate group-hover:text-brand-primary group-hover:translate-x-1 transition-all" size={20} />
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
+                          <Users size={14} className="text-brand-muted" />
+                          <span className="text-xs font-bold text-brand-slate">{g.total}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <AlertTriangle size={14} className={g.sick > 0 ? 'text-rose-500' : 'text-brand-muted'} />
+                          <span className={`text-xs font-bold ${g.sick > 0 ? 'text-rose-500' : 'text-brand-slate'}`}>{g.sick} kasal</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Thermometer size={14} className={g.allergy > 0 ? 'text-amber-500' : 'text-brand-muted'} />
+                          <span className={`text-xs font-bold ${g.allergy > 0 ? 'text-amber-500' : 'text-brand-slate'}`}>{g.allergy} allergiya</span>
+                        </div>
+                      </div>
                     </div>
-                  </th>
-                  <th colSpan={5} className="py-6 px-4 text-center bg-emerald-50/30">
-                    <div className="flex items-center justify-center gap-2 text-emerald-600">
-                      <Activity size={14} /> Kunlik tibbiy nazorat
+                  ))}
+                </div>
+              </div>
+
+              {/* ALERTS SYSTEM */}
+              <div className="space-y-6">
+                <h3 className="text-xl font-black text-brand-depth">Sog'liq Ogohlantirishlari</h3>
+                <div className="bg-white rounded-[2rem] border border-brand-border shadow-sm overflow-hidden p-6 space-y-4 h-full max-h-[500px] overflow-y-auto custom-scrollbar">
+                  {stats.sickCount > 0 && (
+                    <div className="flex gap-4 p-4 bg-rose-50 border border-rose-100 rounded-2xl animate-in slide-in-from-right">
+                      <div className="mt-1"><AlertCircle className="text-rose-500" size={20}/></div>
+                      <div>
+                        <p className="text-sm font-black text-rose-700">Kasal bolalar mavjud</p>
+                        <p className="text-[11px] font-bold text-rose-600/80 mt-1">Tizimda bugun {stats.sickCount} ta kasal bola qayd etilgan.</p>
+                      </div>
                     </div>
-                  </th>
-                </tr>
-                <tr className="text-[10px] text-brand-muted uppercase font-black tracking-widest border-b border-brand-border bg-slate-50/10">
-                  <th className="py-4 px-8">Bolaning F.I.Sh</th>
-                  <th className="py-4 px-4 text-center border-l border-brand-border">Vazni (kg)</th>
-                  <th className="py-4 px-4 text-center border-r border-brand-border">Bo'yi (sm)</th>
-                  <th className="py-4 px-4">Harorat (°C)</th>
-                  <th colSpan={2} className="py-4 px-4 text-center border-x border-brand-border bg-orange-50/20">
-                    <div className="flex items-center justify-center gap-2 text-orange-600">
-                       Allergiya (Bor/Turi)
+                  )}
+                  {allergies.length > 0 && (
+                    <div className="flex gap-4 p-4 bg-amber-50 border border-amber-100 rounded-2xl animate-in slide-in-from-right delay-100">
+                      <div className="mt-1"><AlertCircle className="text-amber-500" size={20}/></div>
+                      <div>
+                        <p className="text-sm font-black text-amber-700">Allergiya nazorati</p>
+                        <p className="text-[11px] font-bold text-amber-600/80 mt-1">{allergies.length} ta bolada allergiya holati aniqlangan. Menyuni tekshiring.</p>
+                      </div>
                     </div>
-                  </th>
-                  <th className="py-4 px-4 text-center">Holati</th>
-                  <th className="py-4 px-8">Izoh</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {children.map((child: any) => {
-                  const record = medicalRecords[child.id] || { weight: '', height: '', temperature: '', allergy: '', isSick: false, isAllergic: false, notes: '' };
-                  return (
-                    <tr key={child.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="py-5 px-8">
-                        <div className="flex items-center gap-3">
-                          <span className="font-bold text-brand-depth">{child.first_name} {child.last_name}</span>
-                          {record.isAllergic && (
-                            <button 
-                              onClick={() => showNotification(`Allergiya: ${record.allergy || 'Noma\'lum'}`, 'warning')}
-                              className="text-orange-500 hover:scale-110 transition-transform"
-                            >
-                              <AlertTriangle size={14} fill="currentColor" fillOpacity={0.1} />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                      <td className="py-5 px-4 bg-blue-50/10 border-l border-brand-border">
-                        <div className="relative flex justify-center">
-                          <input 
-                            type="number" 
-                            step="0.1"
-                            value={record.weight}
-                            onChange={(e) => handleDataChange(child.id, 'weight', e.target.value)}
-                            placeholder="0.0" 
-                            className="w-20 px-3 py-2 bg-white border border-blue-100 rounded-xl text-xs font-black text-blue-600 outline-none focus:ring-2 focus:ring-blue-500/20 text-center" 
-                          />
-                        </div>
-                      </td>
-                      <td className="py-5 px-4 bg-blue-50/10 border-r border-brand-border">
-                        <div className="relative flex justify-center">
-                          <input 
-                            type="number" 
-                            value={record.height}
-                            onChange={(e) => handleDataChange(child.id, 'height', e.target.value)}
-                            placeholder="0" 
-                            className="w-20 px-3 py-2 bg-white border border-blue-100 rounded-xl text-xs font-black text-blue-600 outline-none focus:ring-2 focus:ring-blue-500/20 text-center" 
-                          />
-                        </div>
-                      </td>
-                      <td className="py-5 px-4">
-                        <div className="relative">
-                          <Thermometer className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-muted" size={14} />
-                          <input 
-                            type="number" 
-                            step="0.1"
-                            value={record.temperature}
-                            onChange={(e) => handleDataChange(child.id, 'temperature', e.target.value)}
-                            placeholder="36.6" 
-                            className="w-24 pl-9 pr-3 py-2 bg-slate-50 border border-brand-border rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-brand-primary/10" 
-                          />
-                        </div>
-                      </td>
-                      <td className="py-5 px-2 bg-orange-50/10 border-l border-orange-100 w-10">
-                        <div className="flex justify-center">
-                          <input 
-                            type="checkbox"
-                            checked={record.isAllergic}
-                            onChange={(e) => handleDataChange(child.id, 'allergy', e.target.checked ? 'ALLERGIC' : '')}
-                            className="w-4 h-4 rounded border-orange-200 text-orange-500 focus:ring-orange-500/20"
-                          />
-                        </div>
-                      </td>
-                      <td className="py-5 px-2 bg-orange-50/10 border-r border-orange-100">
-                        <input 
-                          type="text" 
-                          value={record.allergy}
-                          onChange={(e) => handleDataChange(child.id, 'allergy', e.target.value)}
-                          placeholder={record.isAllergic ? "Allergiya turi..." : "Mavjud emas"}
-                          className={`w-full px-3 py-2 border rounded-xl text-xs font-bold outline-none transition-all ${
-                            record.isAllergic 
-                              ? 'bg-white border-orange-200 text-orange-700' 
-                              : 'bg-slate-50 border-brand-border text-brand-muted'
-                          }`} 
-                        />
-                      </td>
-                      <td className="py-5 px-4 text-center">
-                        <button 
-                          onClick={() => handleDataChange(child.id, 'isSick', !record.isSick)}
-                          className={`w-24 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${
-                            record.isSick 
-                              ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/20' 
-                              : 'bg-emerald-50 text-emerald-600 border border-emerald-100'
-                          }`}
-                        >
-                          {record.isSick ? 'Kasal' : 'Sog\'lom'}
-                        </button>
-                      </td>
-                      <td className="py-5 px-8">
-                        <input 
-                          type="text" 
-                          value={record.notes}
-                          onChange={(e) => handleDataChange(child.id, 'notes', e.target.value)}
-                          placeholder="Qo'shimcha ma'lumot..." 
-                          className="w-full px-3 py-2 bg-slate-50 border border-brand-border rounded-xl text-xs font-medium outline-none focus:ring-2 focus:ring-brand-primary/10" 
-                        />
-                      </td>
+                  )}
+                  {stats.sickCount === 0 && allergies.length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-10 text-center text-brand-muted">
+                      <ShieldCheck size={40} className="text-emerald-500 opacity-50 mb-3" />
+                      <p className="text-sm font-black uppercase tracking-widest">Barchasi joyida</p>
+                      <p className="text-xs font-bold mt-1">Xavotirga o'rin yo'q</p>
+                    </div>
+                  )}
+                  
+                  {/* Miniature alert list based on real allergy data */}
+                  {allergies.slice(0, 5).map((a: any, idx: number) => (
+                    <div key={idx} className="flex gap-3 p-3 bg-slate-50 border border-brand-border rounded-xl">
+                      <div className="w-2 h-2 rounded-full bg-amber-500 mt-1.5 flex-shrink-0"></div>
+                      <div>
+                        <p className="text-xs font-black text-brand-depth">{a.first_name} {a.last_name}</p>
+                        <p className="text-[9px] font-bold text-brand-muted mt-0.5">{a.allergies}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* GROUP VIEW */}
+        {viewMode === 'GROUP' && selectedGroup && (
+          <motion.div key="group" initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-20}} className="space-y-8">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div className="flex items-center gap-4">
+                <button onClick={() => setViewMode('DASHBOARD')} className="w-12 h-12 bg-white rounded-[1rem] border border-brand-border flex items-center justify-center hover:bg-slate-50 transition-colors">
+                  <ArrowLeft size={20} className="text-brand-depth" />
+                </button>
+                <div>
+                  <h2 className="text-3xl font-black text-brand-depth">{selectedGroup.name}</h2>
+                  <p className="text-brand-muted text-[10px] font-black uppercase tracking-widest mt-1">Guruh sog'liq jurnali</p>
+                </div>
+              </div>
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-muted" size={18} />
+                <input 
+                  type="text" 
+                  placeholder="Ism bo'yicha qidirish..." 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full md:w-64 bg-white border border-brand-border rounded-[1rem] py-3 pl-12 pr-4 font-bold text-sm outline-none focus:border-brand-primary transition-colors shadow-sm"
+                />
+              </div>
+            </div>
+
+            <div className="bg-white rounded-[2.5rem] shadow-sm border border-brand-border overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="bg-slate-50/50 text-[10px] font-black uppercase text-brand-muted tracking-widest border-b border-brand-border">
+                      <th className="px-8 py-6">Bola F.I.Sh</th>
+                      <th className="px-6 py-6">Guruh</th>
+                      <th className="px-6 py-6">Yosh</th>
+                      <th className="px-6 py-6">Holat</th>
+                      <th className="px-6 py-6">Allergiya</th>
+                      <th className="px-8 py-6 text-right">Amal</th>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </div>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {allChildren
+                      .filter(c => c.group_id === selectedGroup.id)
+                      .filter(c => (c.first_name + ' ' + c.last_name).toLowerCase().includes(searchQuery.toLowerCase()))
+                      .map((child: any) => {
+                        const isSick = child.medical_notes?.toLowerCase().includes('kasal') || child.status === 'SICK';
+                        const hasAllergy = child.allergies && child.allergies.trim() !== '';
+
+                        return (
+                          <tr key={child.id} className="hover:bg-brand-primary/[0.02] transition-colors group">
+                            <td className="px-8 py-5">
+                              <p className="text-sm font-black text-brand-depth">{child.first_name} {child.last_name}</p>
+                            </td>
+                            <td className="px-6 py-5 text-xs font-bold text-brand-slate">{selectedGroup.name}</td>
+                            <td className="px-6 py-5 text-xs font-bold text-brand-slate">{child.age_category || '-'}</td>
+                            <td className="px-6 py-5">
+                              <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${isSick ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'}`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${isSick ? 'bg-rose-500' : 'bg-emerald-500'}`}></span>
+                                {isSick ? 'Kasal' : 'Sog\'lom'}
+                              </div>
+                            </td>
+                            <td className="px-6 py-5">
+                              <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${hasAllergy ? 'bg-amber-50 text-amber-600 border border-amber-100' : 'bg-slate-50 text-brand-muted border border-brand-border'}`}>
+                                {hasAllergy ? '⚠ Bor' : '❌ Yo\'q'}
+                              </div>
+                            </td>
+                            <td className="px-8 py-5 text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <button onClick={() => handleOpenProfile(child)} className="p-2 text-brand-slate hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-colors" title="Ko'rish">
+                                  <Eye size={18} />
+                                </button>
+                                <button onClick={() => handleOpenRecordModal(child)} className="flex items-center gap-2 px-4 py-2 bg-brand-primary/10 text-brand-primary hover:bg-brand-primary hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors">
+                                  <PlusCircle size={14} /> Qayd qilish
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* PROFILE VIEW */}
+        {viewMode === 'PROFILE' && selectedChild && (
+          <motion.div key="profile" initial={{opacity:0, scale:0.95}} animate={{opacity:1, scale:1}} exit={{opacity:0, scale:0.95}} className="space-y-6">
+            <button onClick={() => setViewMode('GROUP')} className="flex items-center gap-2 text-brand-muted hover:text-brand-primary font-black text-[10px] uppercase tracking-widest transition-colors mb-4">
+              <ArrowLeft size={16} /> Jadvalga qaytish
+            </button>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Basic Info */}
+              <div className="bg-white p-8 rounded-[2.5rem] border border-brand-border shadow-sm flex flex-col items-center text-center">
+                <div className="w-24 h-24 bg-gradient-to-br from-brand-primary/20 to-blue-500/20 text-brand-primary rounded-[2rem] flex items-center justify-center mb-6 shadow-inner">
+                  <Stethoscope size={40} />
+                </div>
+                <h2 className="text-2xl font-black text-brand-depth">{selectedChild.first_name} {selectedChild.last_name}</h2>
+                <p className="text-brand-muted font-bold text-sm mt-1">{selectedChild.age_category || 'Yosh kiritilmagan'} • {selectedGroup?.name}</p>
+                
+                <div className="w-full mt-8 space-y-4">
+                  <div className="flex justify-between p-4 bg-slate-50 rounded-2xl border border-brand-border">
+                    <span className="text-[10px] font-black text-brand-muted uppercase tracking-widest">Joriy Holat</span>
+                    <span className={`text-[10px] font-black uppercase tracking-widest ${(selectedChild.status === 'SICK' || selectedChild.medical_notes?.toLowerCase().includes('kasal')) ? 'text-rose-500' : 'text-emerald-500'}`}>
+                      {(selectedChild.status === 'SICK' || selectedChild.medical_notes?.toLowerCase().includes('kasal')) ? 'Kasal' : 'Sog\'lom'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between p-4 bg-slate-50 rounded-2xl border border-brand-border">
+                    <span className="text-[10px] font-black text-brand-muted uppercase tracking-widest">Allergiya</span>
+                    <span className={`text-[10px] font-black uppercase tracking-widest ${selectedChild.allergies ? 'text-amber-500' : 'text-brand-slate'}`}>
+                      {selectedChild.allergies || "Yo'q"}
+                    </span>
+                  </div>
+                  <button onClick={() => handleOpenRecordModal(selectedChild)} className="w-full py-4 bg-brand-primary text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-brand-primary/20 hover:bg-brand-primary/90 transition-all flex items-center justify-center gap-2">
+                    <Edit3 size={16} /> Yangi Qayd Qo'shish
+                  </button>
+                </div>
+              </div>
+
+              {/* Timeline & History */}
+              <div className="lg:col-span-2 bg-white p-8 rounded-[2.5rem] border border-brand-border shadow-sm h-[600px] overflow-y-auto custom-scrollbar">
+                <h3 className="text-xl font-black text-brand-depth mb-6 flex items-center gap-2"><History size={20} className="text-brand-primary"/> Tibbiy Tarix (Timeline)</h3>
+                
+                <div className="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-brand-border before:to-transparent">
+                  {history.filter(h => h.child_id === selectedChild.id).length > 0 ? (
+                    history.filter(h => h.child_id === selectedChild.id).map((record, idx) => (
+                      <div key={idx} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                        <div className="flex items-center justify-center w-10 h-10 rounded-full border-4 border-white bg-slate-50 text-brand-slate group-[.is-active]:bg-emerald-500 group-[.is-active]:text-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
+                          {record.is_sick ? <AlertTriangle size={14}/> : <Activity size={14}/>}
+                        </div>
+                        <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-5 rounded-2xl bg-white border border-brand-border shadow-sm hover:shadow-md transition-shadow">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-black text-brand-depth text-sm">{record.is_sick ? 'Kasallik qayd etildi' : 'Sog\'lom ko\'rik'}</span>
+                            <span className="text-[9px] font-black text-brand-muted uppercase tracking-widest">{record.date}</span>
+                          </div>
+                          <div className="space-y-1 mt-3 text-xs text-brand-slate font-medium">
+                            {record.temperature && <p>Harorat: {record.temperature}°C</p>}
+                            {record.weight && <p>Vazn: {record.weight}kg</p>}
+                            {record.notes && <p className="mt-2 text-brand-depth italic bg-slate-50 p-2 rounded-lg">"{record.notes}"</p>}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-10 text-brand-muted font-bold text-sm italic">
+                      Bu bola uchun tibbiy tarix mavjud emas.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* MEDICAL RECORD MODAL */}
+      <AnimatePresence>
+        {isRecordModalOpen && selectedChild && (
+          <div className="fixed inset-0 flex items-center justify-center z-[110] p-4 bg-black/5 backdrop-blur-sm">
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-white w-full max-w-2xl rounded-[10px] p-10 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.2)] border border-white/20 relative overflow-y-auto max-h-[90vh] custom-scrollbar">
+              <div className="flex justify-between items-start mb-8">
+                <div>
+                  <h3 className="text-3xl font-black text-brand-depth tracking-tight">Tibbiy Qayd</h3>
+                  <p className="text-[10px] text-brand-muted font-black uppercase tracking-widest mt-1">Holatni va ko'rik natijalarini kiritish</p>
+                </div>
+                <button onClick={() => setIsRecordModalOpen(false)} className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center hover:bg-rose-50 hover:text-rose-500 transition-all font-black text-xl">&times;</button>
+              </div>
+              
+              <form onSubmit={handleSaveRecord} className="space-y-6">
+                <div className="p-5 bg-slate-50 rounded-[10px] border border-brand-border flex items-center gap-4">
+                  <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-brand-primary"><Users size={24}/></div>
+                  <div>
+                    <p className="text-[10px] font-black text-brand-muted uppercase tracking-widest">Bemor (Bola)</p>
+                    <p className="text-lg font-black text-brand-depth">{selectedChild.first_name} {selectedChild.last_name}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-brand-muted uppercase tracking-widest ml-1">Umumiy Holat</label>
+                    <select 
+                      value={recordForm.status} 
+                      onChange={e => setRecordForm({...recordForm, status: e.target.value})}
+                      className={`w-full bg-white border-2 rounded-[10px] p-4 font-black outline-none transition-colors ${recordForm.status === 'Kasal' ? 'border-rose-100 text-rose-600 focus:border-rose-400' : 'border-emerald-100 text-emerald-600 focus:border-emerald-400'}`}
+                    >
+                      <option value="Sog'lom">Sog'lom</option>
+                      <option value="Kasal">Kasal</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-brand-muted uppercase tracking-widest ml-1">Allergiya holati</label>
+                    <select 
+                      value={recordForm.hasAllergy} 
+                      onChange={e => setRecordForm({...recordForm, hasAllergy: e.target.value})}
+                      className={`w-full bg-white border-2 rounded-[10px] p-4 font-black outline-none transition-colors ${recordForm.hasAllergy === 'Bor' ? 'border-amber-100 text-amber-600 focus:border-amber-400' : 'border-slate-100 text-brand-slate focus:border-brand-primary'}`}
+                    >
+                      <option value="Yo'q">Yo'q</option>
+                      <option value="Bor">Bor</option>
+                    </select>
+                  </div>
+                </div>
+
+                {recordForm.hasAllergy === 'Bor' && (
+                  <div className="space-y-2 animate-in slide-in-from-top-2">
+                    <label className="text-[10px] font-black text-amber-600 uppercase tracking-widest ml-1">Allergiya turi</label>
+                    <input 
+                      required
+                      placeholder="Masalan: Sutga, Sitrus mevalarga..."
+                      value={recordForm.allergyType}
+                      onChange={e => setRecordForm({...recordForm, allergyType: e.target.value})}
+                      className="w-full bg-amber-50/50 border border-amber-200 rounded-[10px] p-4 font-bold outline-none focus:ring-2 focus:ring-amber-500/20"
+                    />
+                  </div>
+                )}
+
+                {recordForm.status === 'Kasal' && (
+                  <div className="space-y-2 animate-in slide-in-from-top-2">
+                    <label className="text-[10px] font-black text-rose-600 uppercase tracking-widest ml-1">Kasallik turi (Tashxis)</label>
+                    <input 
+                      required
+                      placeholder="Masalan: O'RVI, Shamollash..."
+                      value={recordForm.illnessType}
+                      onChange={e => setRecordForm({...recordForm, illnessType: e.target.value})}
+                      className="w-full bg-rose-50/50 border border-rose-200 rounded-[10px] p-4 font-bold outline-none focus:ring-2 focus:ring-rose-500/20"
+                    />
+                  </div>
+                )}
+
+                <div className="grid grid-cols-3 gap-4 border-t border-brand-border pt-6 mt-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-brand-muted uppercase tracking-widest ml-1">Harorat (°C)</label>
+                    <input 
+                      type="number" step="0.1" placeholder="36.6"
+                      value={recordForm.temperature} onChange={e => setRecordForm({...recordForm, temperature: e.target.value})}
+                      className="w-full bg-white border border-brand-border rounded-[10px] p-4 font-black outline-none focus:border-brand-primary"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-brand-muted uppercase tracking-widest ml-1">Vazn (kg)</label>
+                    <input 
+                      type="number" step="0.1" placeholder="15.5"
+                      value={recordForm.weight} onChange={e => setRecordForm({...recordForm, weight: e.target.value})}
+                      className="w-full bg-white border border-brand-border rounded-[10px] p-4 font-black outline-none focus:border-brand-primary"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-brand-muted uppercase tracking-widest ml-1">Bo'y (sm)</label>
+                    <input 
+                      type="number" step="1" placeholder="105"
+                      value={recordForm.height} onChange={e => setRecordForm({...recordForm, height: e.target.value})}
+                      className="w-full bg-white border border-brand-border rounded-[10px] p-4 font-black outline-none focus:border-brand-primary"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2 pt-2">
+                  <label className="text-[10px] font-black text-brand-muted uppercase tracking-widest ml-1">Izoh va Ko'rsatmalar</label>
+                  <textarea 
+                    rows={3}
+                    placeholder="Qo'shimcha tibbiy ko'rsatmalar yoki dori-darmonlar..."
+                    value={recordForm.notes}
+                    onChange={e => setRecordForm({...recordForm, notes: e.target.value})}
+                    className="w-full bg-white border border-brand-border rounded-[10px] p-4 font-bold outline-none focus:border-brand-primary resize-none"
+                  />
+                </div>
+
+                <div className="pt-4 border-t border-brand-border">
+                  <button type="submit" className="w-full py-5 bg-brand-primary text-white rounded-[10px] font-black uppercase text-sm tracking-[0.2em] shadow-xl shadow-brand-primary/30 hover:bg-brand-primary/90 transition-all active:scale-95">
+                    Saqlash va Qayd etish
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 };

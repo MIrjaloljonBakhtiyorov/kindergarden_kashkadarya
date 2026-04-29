@@ -113,7 +113,7 @@ export class ChildrenRepository {
 
   async delete(id: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      db.get('SELECT first_name, last_name FROM children WHERE id = ?', [id], async (err, child) => {
+      db.get('SELECT first_name, last_name FROM children WHERE id = ?', [id], async (err, child: any) => {
         const name = child ? `${child.first_name} ${child.last_name}` : 'Noma\'lum';
         db.run('DELETE FROM children WHERE id = ?', [id], async (err) => {
           if (err) reject(err);

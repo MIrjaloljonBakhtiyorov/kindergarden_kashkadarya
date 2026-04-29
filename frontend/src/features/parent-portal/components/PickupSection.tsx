@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { ShieldCheck, UserCheck, Smartphone, Trash2, Contact, X, Save, Camera } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import axios from 'axios';
+import apiClient from '../../../api/apiClient';
 import { useAuth } from '../../../context/AuthContext';
 import { useNotification } from '../../../context/NotificationContext';
 
-const API_BASE = 'http://localhost:3001/api';
 
 const RELATIONS = [
   'Bobosi', 'Buvisi', 'Amakisi', 'Tog\'asi', 'Ammasi', 'Xolasi', 
@@ -30,7 +29,7 @@ export const PickupSection = ({ data, onUpdate }: any) => {
     
     setIsSaving(true);
     try {
-      await axios.post(`${API_BASE}/parent-portal/pickups`, {
+      await apiClient.post(`/parent-portal/pickups`, {
         ...formData,
         child_id: user.childId
       });
@@ -49,7 +48,7 @@ export const PickupSection = ({ data, onUpdate }: any) => {
     if (!confirm('Ushbu vakilni o\'chirishni xohlaysizmi?')) return;
     
     try {
-      await axios.delete(`${API_BASE}/parent-portal/pickups/${id}`);
+      await apiClient.delete(`/parent-portal/pickups/${id}`);
       showNotification('Vakil o\'chirildi', 'success');
       if (onUpdate) onUpdate();
     } catch (error) {

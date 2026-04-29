@@ -39,7 +39,7 @@ export const GroupFormModal: React.FC<Props> = ({ group, onClose, onSubmit }) =>
       <motion.div 
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="bg-white w-full max-w-md rounded-3xl p-8 space-y-6 shadow-2xl border border-brand-border"
+        className="bg-white w-full max-w-md rounded-[10px] p-8 space-y-6 shadow-2xl border border-brand-border"
       >
         <div>
           <h3 className="text-xl font-black text-brand-depth">{group ? 'Guruhni tahrirlash' : 'Yangi guruh yarating'}</h3>

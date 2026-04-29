@@ -24,7 +24,7 @@ export class ChildrenController {
 
   update = async (req: Request, res: Response) => {
     try {
-      await this.service.updateChild(req.params.id, req.body);
+      await this.service.updateChild(req.params.id as string, req.body);
       res.status(200).json({ message: 'Child updated successfully' });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -33,7 +33,7 @@ export class ChildrenController {
 
   delete = async (req: Request, res: Response) => {
     try {
-      await this.service.deleteChild(req.params.id);
+      await this.service.deleteChild(req.params.id as string);
       res.status(204).send();
     } catch (error: any) {
       res.status(500).json({ error: error.message });

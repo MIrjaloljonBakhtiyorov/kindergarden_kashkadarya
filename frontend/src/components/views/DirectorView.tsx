@@ -7,10 +7,8 @@ import {
   FlaskConical,
   AlertCircle
 } from 'lucide-react';
-import axios from 'axios';
+import apiClient from '../../api/apiClient';
 import { OperationsLog } from '../../features/operations/components/OperationsLog';
-
-const API_BASE = 'http://localhost:3001/api';
 
 const KPICard = ({ title, value, change, trend, icon: Icon, color }: any) => (
   <div className="bg-white p-6 rounded-xl border border-brand-border shadow-sm hover:shadow-md transition-all duration-300">
@@ -40,9 +38,9 @@ const DirectorView: React.FC = () => {
       try {
         const today = new Date().toISOString().split('T')[0];
         const [statsRes, samplesRes, menuRes] = await Promise.all([
-          axios.get(`${API_BASE}/attendance/today-stats`),
-          axios.get(`${API_BASE}/lab/samples`),
-          axios.get(`${API_BASE}/menu/${today}`)
+          apiClient.get('/attendance/today-stats'),
+          apiClient.get('/lab/samples'),
+          apiClient.get(`/menu/${today}`)
         ]);
         setStats(statsRes.data);
         setSamples(samplesRes.data.slice(0, 5));
@@ -54,16 +52,17 @@ const DirectorView: React.FC = () => {
     fetchData();
   }, []);
 
-  const approveRecipes = async () => {
+  const handleApproveMenu = async () => {
     try {
-      await axios.post(`${API_BASE}/menus/approve-today`);
-      // Re-fetch stats to update UI
-      const statsRes = await axios.get(`${API_BASE}/attendance/today-stats`);
+      await apiClient.post('/menus/approve-today');
+      // Refresh stats
+      const statsRes = await apiClient.get('/attendance/today-stats');
       setStats(statsRes.data);
     } catch (err) {
       console.error(err);
     }
   };
+
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-700">
@@ -136,7 +135,7 @@ const DirectorView: React.FC = () => {
                     </div>
                   </div>
                   <button 
-                    onClick={approveRecipes}
+                    onClick={handleApproveMenu}
                     className="px-3 py-1.5 bg-brand-primary text-white text-[10px] font-black uppercase rounded-lg hover:bg-brand-primary-dark transition-colors shadow-lg shadow-brand-primary/20"
                   >
                     Tasdiqlash

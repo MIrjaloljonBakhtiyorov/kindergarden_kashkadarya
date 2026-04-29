@@ -26,19 +26,20 @@ export class StaffController {
 
   update = async (req: Request, res: Response) => {
     try {
-      await this.service.update(req.params.id, req.body);
-      res.json({ message: 'Staff updated successfully' });
+      await this.service.update(req.params.id as string, req.body);
+      res.status(200).json({ message: 'Staff updated successfully' });
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(500).json({ error: error.message });
     }
   };
 
   delete = async (req: Request, res: Response) => {
     try {
-      await this.service.delete(req.params.id);
+      await this.service.delete(req.params.id as string);
       res.status(204).send();
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
   };
+
 }

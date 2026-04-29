@@ -25,11 +25,10 @@ import {
   ArrowUpRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import axios from 'axios';
+import apiClient from '../../api/apiClient';
 import { LabSample, KitchenTask, LabRiskLevel, LabSampleStatus } from '../../types';
 import { useNotification } from '../../context/NotificationContext';
 
-const API_BASE = 'http://localhost:3001/api';
 
 const LabView: React.FC = () => {
   const { showNotification } = useNotification();
@@ -70,7 +69,7 @@ const LabView: React.FC = () => {
   const fetchSamples = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`${API_BASE}/lab/samples`);
+      const res = await apiClient.get(`/lab/samples`);
       setSamples(res.data);
     } catch (err) {
       console.error(err);
@@ -82,7 +81,7 @@ const LabView: React.FC = () => {
   const fetchKitchenTasks = async () => {
     try {
       const today = new Date().toISOString().split('T')[0];
-      const res = await axios.get(`${API_BASE}/kitchen/tasks/${today}`);
+      const res = await apiClient.get(`/kitchen/tasks/${today}`);
       setKitchenTasks(res.data);
     } catch (err) {
       console.error(err);
@@ -124,7 +123,7 @@ const LabView: React.FC = () => {
     };
 
     try {
-      await axios.post(`${API_BASE}/lab/samples`, sampleData);
+      await apiClient.post(`/lab/samples`, sampleData);
       showNotification("Yangi sinama muvaffaqiyatli saqlandi!", "success");
       fetchSamples();
       setShowAddModal(false);
@@ -427,7 +426,7 @@ const LabView: React.FC = () => {
                initial={{ scale: 0.9, opacity: 0 }} 
                animate={{ scale: 1, opacity: 1 }} 
                exit={{ scale: 0.9, opacity: 0 }}
-               className="bg-white w-full max-w-5xl rounded-[3.5rem] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col border border-slate-200"
+               className="bg-white w-full max-w-5xl rounded-[10px] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col border border-slate-200"
              >
                 <div className="flex-1 overflow-y-auto p-12 space-y-12">
                    <div className="flex justify-between items-start">
@@ -575,7 +574,7 @@ const LabView: React.FC = () => {
                initial={{ scale: 0.9, opacity: 0 }} 
                animate={{ scale: 1, opacity: 1 }} 
                exit={{ scale: 0.9, opacity: 0 }}
-               className="bg-white w-full max-w-2xl rounded-[3.5rem] p-12 shadow-2xl relative overflow-y-auto max-h-[90vh] border border-slate-200"
+               className="bg-white w-full max-w-2xl rounded-[10px] p-12 shadow-2xl relative overflow-y-auto max-h-[90vh] border border-slate-200"
              >
                <div className="flex justify-between items-start mb-10">
                  <div>

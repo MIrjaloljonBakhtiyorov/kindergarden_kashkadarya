@@ -18,7 +18,7 @@ import {
   Scale
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import axios from 'axios';
+import apiClient from '../../api/apiClient';
 import { 
   LineChart, 
   Line, 
@@ -36,8 +36,6 @@ import {
 } from 'recharts';
 import { useNotification } from '../../context/NotificationContext';
 
-const API_BASE = 'http://localhost:3001/api';
-
 type FinanceTab = 'EXPENSES' | 'COST_PER_CHILD' | 'PURCHASE_VS_USAGE' | 'REPORTS';
 
 const FinanceView: React.FC = () => {
@@ -53,7 +51,7 @@ const FinanceView: React.FC = () => {
   const fetchTransactions = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`${API_BASE}/finance/transactions`);
+      const res = await apiClient.get('/finance/transactions');
       setTransactions(res.data);
     } catch (err) {
       console.error(err);

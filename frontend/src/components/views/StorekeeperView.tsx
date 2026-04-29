@@ -30,9 +30,8 @@ import {
   Edit3
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import axios from 'axios';
-
-const API_BASE = 'http://localhost:3001/api';
+import apiClient from '../../api/apiClient';
+import { OperationsLog } from '../../features/operations/components/OperationsLog';
 
 const StorekeeperView: React.FC = () => {
   const { showNotification } = useNotification();
@@ -89,8 +88,8 @@ const StorekeeperView: React.FC = () => {
   const fetchData = async () => {
     try {
       const [prodRes, transRes] = await Promise.all([
-        axios.get(`${API_BASE}/inventory/products`),
-        axios.get(`${API_BASE}/inventory/transactions`)
+        apiClient.get(`/inventory/products`),
+        apiClient.get(`/inventory/transactions`)
       ]);
       setProducts(prodRes.data);
       setTransactions(transRes.data);
@@ -126,17 +125,17 @@ const StorekeeperView: React.FC = () => {
     try {
       if (editingProduct) {
         // Update product definition
-        await axios.put(`${API_BASE}/inventory/products/${editingProduct.id}`, {
+        await apiClient.put(`/inventory/products/${editingProduct.id}`, {
           name: productForm.name, category: productForm.category, unit: productForm.unit, brand: productForm.brand, min_stock: parseFloat(productForm.min_stock)
         });
         showNotification("Mahsulot yangilandi!", 'success');
       } else {
         // Create product + Initial Stock In
-        const prodRes = await axios.post(`${API_BASE}/inventory/products`, {
+        const prodRes = await apiClient.post(`/inventory/products`, {
           name: productForm.name, category: productForm.category, unit: productForm.unit, brand: productForm.brand, min_stock: parseFloat(productForm.min_stock)
         });
-        await axios.post(`${API_BASE}/inventory/stock-in`, {
-          product_id: prodRes.data.id, quantity: parseFloat(productForm.quantity), price_per_unit: parseFloat(productForm.price_per_unit), total_price: parseFloat(productForm.total_price), expiry_date: productForm.expiry_date, supplier: productForm.supplier, received_date: productForm.received_date, storage_location: productForm.storage_location, storage_temp: parseFloat(productForm.storage_temp), notes: productForm.notes
+        await apiClient.post(`/inventory/stock-in`, {
+          product_id: prodRes.data.id, quantity: parseFloat(productForm.quantity), price_per_unit: parseFloat(productForm.price_per_unit), total_price: parseFloat(productForm.total_price), expiry_date: productForm.expiry_date, supplier: productForm.supplier, received_date: productForm.received_date, storage_location: productForm.storage_location, storage_temp: parseFloat(productForm.storage_temp) || 0, notes: productForm.notes
         });
         showNotification("Yangi mahsulot saqlandi!", 'success');
       }
@@ -150,12 +149,12 @@ const StorekeeperView: React.FC = () => {
   const handleStockIn = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await axios.post(`${API_BASE}/inventory/stock-in`, {
+      await apiClient.post(`/inventory/stock-in`, {
         ...stockInData,
         quantity: parseFloat(stockInData.quantity),
         price_per_unit: parseFloat(stockInData.price_per_unit),
         total_price: parseFloat(stockInData.total_price),
-        storage_temp: parseFloat(stockInData.storage_temp)
+        storage_temp: parseFloat(stockInData.storage_temp) || 0
       });
       showNotification("Kirim muvaffaqiyatli bajarildi!", 'success');
       fetchData();
@@ -169,7 +168,7 @@ const StorekeeperView: React.FC = () => {
   const handleStockOut = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await axios.post(`${API_BASE}/inventory/stock-out`, {
+      await apiClient.post(`/inventory/stock-out`, {
         product_id: stockOutData.product_id, quantity: parseFloat(stockOutData.quantity), date: stockOutData.date
       });
       showNotification("Chiqim bajarildi", 'success');
@@ -189,8 +188,9 @@ const StorekeeperView: React.FC = () => {
   }, [products]);
 
   const categories = useMemo(() => {
+    const base = ['ALL', 'Oziq-ovqat', 'Shirinliklar', 'Go\'sht mahsulotlari', 'Sut mahsulotlari', 'Sabzavot va mevalar', 'Tozalovchi vositalar', 'Kanselyariya', 'O\'yinchoqlar', 'Boshqa'];
     const cats = products.map(p => p.category);
-    return ['ALL', ...Array.from(new Set(cats))];
+    return Array.from(new Set([...base, ...cats]));
   }, [products]);
 
   const filteredProducts = useMemo(() => {
@@ -285,65 +285,53 @@ const StorekeeperView: React.FC = () => {
                 </select>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {filteredProducts.map(product => (
-                  <motion.div layout key={product.id} className="bg-white rounded-[2.5rem] border border-brand-border p-8 shadow-sm hover:shadow-2xl hover:border-brand-primary/30 transition-all group relative">
-                    <div className="flex justify-between items-start mb-6">
-                      <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center text-brand-primary border border-brand-border group-hover:bg-brand-primary group-hover:text-white transition-all duration-500"><Package size={28} /></div>
-                      <div className={`px-4 py-1.5 rounded-full text-[8px] font-black uppercase tracking-[0.2em] ${product.total_quantity < product.min_stock ? 'bg-rose-50 text-rose-500 border border-rose-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'}`}>{product.total_quantity < product.min_stock ? 'Kam qolgan' : 'Soni yetarli'}</div>
-                    </div>
-                    <div className="space-y-1">
-                      <h4 className="text-xl font-black text-brand-depth truncate">{product.name}</h4>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[9px] font-black uppercase text-brand-muted tracking-widest">{product.category}</span>
-                        {product.brand && <><span className="w-1 h-1 bg-slate-300 rounded-full"></span><span className="text-[9px] font-black uppercase text-brand-primary/70">{product.brand}</span></>}
-                      </div>
-                    </div>
-                    <div className="mt-8 pt-6 border-t border-slate-50 space-y-4">
-                      <div className="flex justify-between items-end">
-                        <div>
-                          <p className="text-[8px] font-black text-brand-muted uppercase tracking-widest mb-1">Mavjud qoldiq</p>
-                          <p className="text-2xl font-black text-brand-depth leading-none">{product.total_quantity} <span className="text-xs uppercase text-brand-muted">{product.unit}</span></p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-[8px] font-black text-brand-muted uppercase tracking-widest mb-1">Zahiraviy limit</p>
-                          <p className="text-sm font-black text-rose-500">{product.min_stock} <span className="text-[9px]">{product.unit}</span></p>
-                        </div>
-                      </div>
-                      <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                        <div className={`h-full rounded-full transition-all duration-1000 ${product.total_quantity < product.min_stock ? 'bg-rose-500' : 'bg-emerald-500'}`} style={{ width: `${Math.min((product.total_quantity / (product.min_stock * 2 || 1)) * 100, 100)}%` }}></div>
-                      </div>
-                    </div>
-                    <button onClick={() => handleOpenEditModal(product)} className="absolute top-8 right-8 text-slate-300 hover:text-brand-primary transition-colors p-2 hover:bg-brand-primary/10 rounded-xl">
-                      <Edit3 size={18} />
-                    </button>
-                  </motion.div>
-                ))}
+              <div className="bg-white rounded-[3rem] border border-brand-border overflow-hidden shadow-sm">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr className="bg-slate-50/50 text-[10px] font-black uppercase text-brand-muted tracking-widest border-b border-brand-border">
+                        <th className="px-8 py-6">#</th>
+                        <th className="px-8 py-6">Mahsulot nomi</th>
+                        <th className="px-8 py-6">Brendi</th>
+                        <th className="px-8 py-6 text-center">Miqdori</th>
+                        <th className="px-8 py-6 text-center">Zahira miqdori</th>
+                        <th className="px-8 py-6">Saqlash muddati</th>
+                        <th className="px-8 py-6 text-right">Amal</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                      {filteredProducts.map((product, index) => (
+                        <tr key={product.id} className="hover:bg-brand-primary/[0.02] transition-colors group">
+                          <td className="px-8 py-6 text-xs font-black text-brand-muted">{index + 1}</td>
+                          <td className="px-8 py-6">
+                            <p className="text-sm font-black text-brand-depth">{product.name}</p>
+                            <p className="text-[9px] font-bold text-brand-muted uppercase">{product.category}</p>
+                          </td>
+                          <td className="px-8 py-6 text-xs font-bold text-brand-slate">{product.brand || '-'}</td>
+                          <td className="px-8 py-6 text-center">
+                            <span className={`px-4 py-1.5 rounded-full text-xs font-black ${product.total_quantity < product.min_stock ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                              {product.total_quantity} {product.unit}
+                            </span>
+                          </td>
+                          <td className="px-8 py-6 text-center text-xs font-bold text-brand-muted">{product.min_stock} {product.unit}</td>
+                          <td className="px-8 py-6 text-xs font-bold text-brand-slate">
+                            {product.expiry_date ? new Date(product.expiry_date).toLocaleDateString('uz-UZ') : '-'}
+                          </td>
+                          <td className="px-8 py-6 text-right">
+                            <button onClick={() => handleOpenEditModal(product)} className="text-slate-400 hover:text-brand-primary transition-colors p-2 hover:bg-brand-primary/10 rounded-xl inline-flex">
+                              <Edit3 size={18} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </motion.div>
           ) : (
-            <motion.div key="transactions" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="bg-white rounded-[3rem] border border-brand-border overflow-hidden shadow-sm">
-              <div className="p-8 border-b border-brand-border bg-slate-50/30"><h3 className="font-black text-brand-depth uppercase text-xs tracking-widest flex items-center gap-2"><Layers size={18} className="text-brand-primary" /> Kirim-Chiqim jurnali</h3></div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="bg-slate-50/50 text-[10px] font-black uppercase text-brand-muted tracking-widest border-b border-brand-border">
-                      <th className="px-8 py-6">Sana</th><th className="px-8 py-6">Mahsulot</th><th className="px-8 py-6">Amal</th><th className="px-8 py-6 text-center">Miqdor</th><th className="px-8 py-6 text-right">Qiymati</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50">
-                    {transactions.map(t => (
-                      <tr key={t.id} className="hover:bg-brand-primary/[0.02] transition-colors group">
-                        <td className="px-8 py-6 text-xs font-black text-brand-depth">{new Date(t.date).toLocaleDateString('uz-UZ')}</td>
-                        <td className="px-8 py-6"><p className="text-sm font-black text-brand-depth">{t.product_name}</p><p className="text-[9px] font-bold text-brand-muted uppercase">{t.category}</p></td>
-                        <td className="px-8 py-6"><span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center w-fit gap-2 ${t.type === 'IN' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>{t.type === 'IN' ? <ArrowUp size={12} /> : <ArrowDown size={12} />}{t.type === 'IN' ? 'Kirim' : 'Chiqim'}</span></td>
-                        <td className="px-8 py-6 text-center"><span className={`text-sm font-black ${t.type === 'IN' ? 'text-emerald-600' : 'text-amber-600'}`}>{t.type === 'IN' ? '+' : '-'}{t.quantity} {t.unit}</span></td>
-                        <td className="px-8 py-6 text-right font-black text-xs text-brand-depth">{t.price ? `${t.price.toLocaleString()} so'm` : '-'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+            <motion.div key="transactions" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
+              <OperationsLog />
             </motion.div>
           )}
         </AnimatePresence>
@@ -353,7 +341,7 @@ const StorekeeperView: React.FC = () => {
       <AnimatePresence>
         {isAddModalOpen && (
           <div className="fixed inset-0 flex items-center justify-center z-[110] p-4 bg-black/5">
-            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="bg-white w-full max-w-6xl rounded-[3rem] p-10 shadow-2xl overflow-y-auto max-h-[95vh] relative scrollbar-hidden">
+            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="bg-white w-full max-w-6xl rounded-[10px] p-10 shadow-2xl overflow-y-auto max-h-[95vh] relative scrollbar-hidden">
               <div className="flex justify-between items-start mb-10 text-brand-depth font-black">
                 <div>
                   <h3 className="text-4xl tracking-tight">{editingProduct ? 'Mahsulotni tahrirlash' : 'Yangi mahsulot yaratish'}</h3>
@@ -377,13 +365,25 @@ const StorekeeperView: React.FC = () => {
                       <div className="space-y-2">
                         <label className="text-[10px] font-black text-brand-muted uppercase ml-1">Kategoriya *</label>
                         <select value={productForm.category} onChange={e => setProductForm({...productForm, category: e.target.value})} className="w-full bg-white border border-brand-border rounded-2xl p-4 font-black outline-none">
-                          <option>Oziq-ovqat</option><option>Tozalovchi vositalar</option><option>Kanselyariya</option><option>Boshqa</option>
+                          <option>Oziq-ovqat</option>
+                          <option>Shirinliklar</option>
+                          <option>Go'sht mahsulotlari</option>
+                          <option>Sut mahsulotlari</option>
+                          <option>Sabzavot va mevalar</option>
+                          <option>Tozalovchi vositalar</option>
+                          <option>Kanselyariya</option>
+                          <option>O'yinchoqlar</option>
+                          <option>Boshqa</option>
                         </select>
                       </div>
                       <div className="space-y-2">
                         <label className="text-[10px] font-black text-brand-muted uppercase ml-1">Birlik *</label>
                         <select value={productForm.unit} onChange={e => setProductForm({...productForm, unit: e.target.value})} className="w-full bg-white border border-brand-border rounded-2xl p-4 font-black outline-none">
-                          <option value="kg">kg</option><option value="ltr">ltr</option><option value="dona">dona</option>
+                          <option value="kg">kg</option>
+                          <option value="litr">litr</option>
+                          <option value="dona">dona</option>
+                          <option value="qop">qop</option>
+                          <option value="blok">blok</option>
                         </select>
                       </div>
                     </div>
@@ -410,6 +410,10 @@ const StorekeeperView: React.FC = () => {
                         <input required type="date" value={productForm.received_date} onChange={e => setProductForm({...productForm, received_date: e.target.value})} className="w-full bg-white border border-emerald-100 rounded-2xl p-4 font-black outline-none" title="Qabul sanasi" />
                         <input required type="date" value={productForm.expiry_date} onChange={e => setProductForm({...productForm, expiry_date: e.target.value})} className="w-full bg-white border border-emerald-100 rounded-2xl p-4 font-black outline-none" title="Yaroqlilik muddati" />
                       </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-brand-muted uppercase ml-1">Saqlanish harorati (°C)</label>
+                        <input type="number" placeholder="Harorat" value={productForm.storage_temp} onChange={e => setProductForm({...productForm, storage_temp: e.target.value})} className="w-full bg-white border border-emerald-100 rounded-2xl p-4 font-black outline-none" />
+                      </div>
                     </div>
                   ) : (
                     <div className="p-8 bg-blue-50/50 rounded-[2.5rem] border border-blue-100 flex flex-col items-center justify-center text-center space-y-4 h-full">
@@ -431,7 +435,7 @@ const StorekeeperView: React.FC = () => {
       <AnimatePresence>
         {isStockInModalOpen && (
           <div className="fixed inset-0 flex items-center justify-center z-[110] p-4 bg-black/5">
-            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="bg-white w-full max-w-4xl rounded-[3rem] p-10 shadow-2xl overflow-y-auto max-h-[95vh] relative scrollbar-hidden">
+            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="bg-white w-full max-w-4xl rounded-[10px] p-10 shadow-2xl overflow-y-auto max-h-[95vh] relative scrollbar-hidden">
               <div className="flex justify-between items-start mb-10 text-brand-depth font-black">
                 <h3 className="text-4xl tracking-tight">Zaxira kirimi</h3>
                 <button onClick={() => setIsStockInModalOpen(false)} className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center hover:bg-rose-50 hover:text-rose-500 transition-all text-2xl shadow-sm">&times;</button>
@@ -462,6 +466,10 @@ const StorekeeperView: React.FC = () => {
                       <input required type="date" value={stockInData.received_date} onChange={e => setStockInData({...stockInData, received_date: e.target.value})} className="w-full bg-white border border-brand-border rounded-2xl p-4 font-black outline-none" />
                       <input required type="date" value={stockInData.expiry_date} onChange={e => setStockInData({...stockInData, expiry_date: e.target.value})} className="w-full bg-white border-2 border-rose-50 rounded-2xl p-4 font-black outline-none" />
                     </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-brand-muted uppercase ml-1">Saqlanish harorati (°C)</label>
+                      <input type="number" placeholder="Harorat" value={stockInData.storage_temp} onChange={e => setStockInData({...stockInData, storage_temp: e.target.value})} className="w-full bg-white border border-brand-border rounded-2xl p-4 font-black outline-none" />
+                    </div>
                   </div>
                   <button type="submit" className="w-full py-6 bg-emerald-500 text-white rounded-[2rem] font-black text-sm uppercase tracking-[0.3em] shadow-2xl hover:scale-[1.02] transition-all">Kirimni tasdiqlash</button>
                 </div>
@@ -471,17 +479,93 @@ const StorekeeperView: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* Stock Out Modal (Compact) */}
+      {/* Stock Out Modal (Enhanced) */}
       <AnimatePresence>
         {isOutModalOpen && (
           <div className="fixed inset-0 flex items-center justify-center z-[110] p-4 bg-black/5">
-            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="bg-white w-full max-w-xl rounded-[3rem] p-12 shadow-2xl relative">
-              <div className="flex justify-between items-start mb-10"><h3 className="text-3xl font-black text-brand-depth tracking-tight">Mahsulot chiqimi</h3><button onClick={() => setIsOutModalOpen(false)} className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center hover:bg-rose-50 hover:text-rose-500 transition-all font-black text-2xl">&times;</button></div>
-              <form onSubmit={handleStockOut} className="space-y-8">
-                <select required value={stockOutData.product_id} onChange={e => setStockOutData({...stockOutData, product_id: e.target.value})} className="w-full bg-slate-50 border-2 border-transparent focus:border-brand-primary rounded-2xl p-5 font-black outline-none transition-all">{products.map(p => <option key={p.id} value={p.id}>{p.name} ({p.total_quantity} {p.unit})</option>)}</select>
-                <div className="relative"><ArrowDown className="absolute left-5 top-1/2 -translate-y-1/2 text-amber-500" size={20} /><input required type="number" step="0.01" value={stockOutData.quantity} onChange={e => setStockOutData({...stockOutData, quantity: e.target.value})} className="w-full bg-slate-50 border border-transparent focus:border-brand-primary rounded-2xl py-5 pl-14 pr-6 font-black text-lg outline-none transition-all" /></div>
-                <input required type="date" value={stockOutData.date} onChange={e => setStockOutData({...stockOutData, date: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl p-5 font-black outline-none" />
-                <button type="submit" className="w-full py-6 bg-brand-depth text-white rounded-[2rem] font-black text-sm uppercase tracking-[0.2em] shadow-2xl shadow-brand-depth/30 hover:scale-[1.02] active:scale-95 transition-all">Chiqimni tasdiqlash</button>
+            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="bg-white w-full max-w-xl rounded-[10px] p-12 shadow-2xl relative">
+              <div className="flex justify-between items-start mb-10">
+                <div>
+                  <h3 className="text-3xl font-black text-brand-depth tracking-tight uppercase">Mahsulot chiqimi</h3>
+                  <p className="text-[10px] text-brand-muted font-black uppercase tracking-widest mt-2">Ombordan mahsulotni hisobdan chiqarish</p>
+                </div>
+                <button onClick={() => setIsOutModalOpen(false)} className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center hover:bg-rose-50 hover:text-rose-500 transition-all font-black text-2xl shadow-sm">&times;</button>
+              </div>
+              
+              <form onSubmit={handleStockOut} className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-brand-muted uppercase ml-1">Mahsulotni tanlang</label>
+                  <select 
+                    required 
+                    value={stockOutData.product_id} 
+                    onChange={e => setStockOutData({...stockOutData, product_id: e.target.value})} 
+                    className="w-full bg-slate-50 border-2 border-transparent focus:border-brand-primary rounded-2xl p-5 font-black outline-none transition-all cursor-pointer"
+                  >
+                    <option value="">Tanlash...</option>
+                    {products.map(p => (
+                      <option key={p.id} value={p.id}>{p.name} ({p.total_quantity} {p.unit})</option>
+                    ))}
+                  </select>
+                </div>
+
+                {stockOutData.product_id && (
+                  <div className="p-6 bg-amber-50 rounded-2xl border border-amber-100 flex items-center justify-between animate-in slide-in-from-top-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-amber-600 shadow-sm"><Archive size={20}/></div>
+                      <span className="text-[10px] font-black text-amber-700 uppercase tracking-widest">Mavjud qoldiq:</span>
+                    </div>
+                    <span className="text-xl font-black text-amber-800">
+                      {products.find(p => p.id === stockOutData.product_id)?.total_quantity} {products.find(p => p.id === stockOutData.product_id)?.unit}
+                    </span>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-brand-muted uppercase ml-1">Miqdori</label>
+                    <div className="relative">
+                      <ArrowDown className="absolute left-5 top-1/2 -translate-y-1/2 text-amber-500" size={20} />
+                      <input 
+                        required 
+                        type="number" 
+                        step="0.01" 
+                        placeholder="0.00"
+                        value={stockOutData.quantity} 
+                        onChange={e => setStockOutData({...stockOutData, quantity: e.target.value})} 
+                        className="w-full bg-slate-50 border border-transparent focus:border-brand-primary rounded-2xl py-5 pl-14 pr-6 font-black text-lg outline-none transition-all" 
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-brand-muted uppercase ml-1">Sana</label>
+                    <input 
+                      required 
+                      type="date" 
+                      value={stockOutData.date} 
+                      onChange={e => setStockOutData({...stockOutData, date: e.target.value})} 
+                      className="w-full bg-slate-50 border-none rounded-2xl p-5 font-black outline-none" 
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-brand-muted uppercase ml-1">Chiqim sababi</label>
+                  <input 
+                    placeholder="Masalan: Oshxonaga berildi, Yaroqsiz bo'lgan..."
+                    className="w-full bg-slate-50 border-none rounded-2xl p-5 font-bold outline-none"
+                    onChange={e => setStockOutData({...stockOutData, reason: e.target.value} as any)}
+                  />
+                </div>
+
+                <button 
+                  type="submit" 
+                  disabled={!stockOutData.product_id || !stockOutData.quantity || parseFloat(stockOutData.quantity) > (products.find(p => p.id === stockOutData.product_id)?.total_quantity || 0)}
+                  className="w-full py-6 bg-brand-depth text-white rounded-[2rem] font-black text-sm uppercase tracking-[0.2em] shadow-2xl shadow-brand-depth/30 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed"
+                >
+                  {parseFloat(stockOutData.quantity) > (products.find(p => p.id === stockOutData.product_id)?.total_quantity || 0) 
+                    ? 'Omborda bunday miqdor yo\'q' 
+                    : 'Chiqimni tasdiqlash'}
+                </button>
               </form>
             </motion.div>
           </div>

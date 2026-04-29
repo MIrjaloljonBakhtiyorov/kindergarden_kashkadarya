@@ -24,7 +24,7 @@ export class GroupsController {
 
   update = async (req: Request, res: Response) => {
     try {
-      const group = await this.repository.update(req.params.id, req.body);
+      const group = await this.repository.update(req.params.id as string, req.body);
       res.json(group);
     } catch (error: any) {
       console.error('Group update error:', error);
@@ -34,7 +34,7 @@ export class GroupsController {
 
   delete = async (req: Request, res: Response) => {
     try {
-      await this.repository.delete(req.params.id);
+      await this.repository.delete(req.params.id as string);
       res.status(204).send();
     } catch (error: any) {
       console.error('Group delete error:', error);

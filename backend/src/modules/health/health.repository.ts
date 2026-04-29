@@ -18,9 +18,9 @@ export class HealthRepository {
         else {
           // Also update children table for current status
           db.run(`
-            UPDATE children SET weight = ?, height = ?, allergies = ?, medical_notes = ?, is_allergic = ?
+            UPDATE children SET weight = ?, height = ?, allergies = ?, medical_notes = ?, is_allergic = ?, status = CASE WHEN ? = 1 THEN 'SICK' ELSE 'ACTIVE' END
             WHERE id = ?
-          `, [data.weight, data.height, data.allergy, data.notes, data.is_allergic ? 1 : 0, data.child_id]);
+          `, [data.weight, data.height, data.allergy, data.notes, data.is_allergic ? 1 : 0, data.is_sick ? 1 : 0, data.child_id]);
           
           resolve();
         }

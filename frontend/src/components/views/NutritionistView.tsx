@@ -15,10 +15,9 @@ import {
   Info,
   Users
 } from 'lucide-react';
-import axios from 'axios';
+import apiClient from '../../api/apiClient';
 import { useNotification } from '../../context/NotificationContext';
 
-const API_BASE = 'http://localhost:3001/api';
 
 interface Dish {
   id: string;
@@ -89,7 +88,7 @@ const NutritionistView: React.FC = () => {
   const fetchMenuForDate = async (date: string) => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API_BASE}/menu/${date}`);
+      const res = await apiClient.get(`/menu/${date}`);
       setCurrentMenu(res.data);
     } catch (err) {
       console.error("Menu fetch error:", err);
@@ -100,7 +99,7 @@ const NutritionistView: React.FC = () => {
 
   const fetchDishes = async () => {
     try {
-      const res = await axios.get(`${API_BASE}/dishes`);
+      const res = await apiClient.get(`/dishes`);
       if (res.data && res.data.length > 0) {
         setDishesPool(res.data);
       }
@@ -112,7 +111,7 @@ const NutritionistView: React.FC = () => {
   const handleAddDish = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await axios.post(`${API_BASE}/dishes`, newDish);
+      await apiClient.post(`/dishes`, newDish);
       showNotification("Yangi taom qo'shildi!", 'success');
       fetchDishes();
       setNewDish({ name: '', image: '', kcal: 0, iron: 0, carbs: 0, vitamins: '' });
@@ -124,7 +123,7 @@ const NutritionistView: React.FC = () => {
   const handleDeleteDish = async (id: string) => {
     if (!window.confirm("Haqiqatan ham ushbu taomni o'chirmoqchimisiz?")) return;
     try {
-      await axios.delete(`${API_BASE}/dishes/${id}`);
+      await apiClient.delete(`/dishes/${id}`);
       showNotification("Taom o'chirildi", 'success');
       fetchDishes();
     } catch (err) {
@@ -135,7 +134,7 @@ const NutritionistView: React.FC = () => {
   const handleSelectDish = async (dish: Dish) => {
     if (!isSelecting) return;
     try {
-      await axios.post(`${API_BASE}/menu`, {
+      await apiClient.post(`/menu`, {
         date: selectedDate,
         meal_name: dish.name,
         meal_type: isSelecting.type,
@@ -375,7 +374,7 @@ const NutritionistView: React.FC = () => {
       {/* Dish Selection Modal */}
       {isSelecting && isSelecting.open && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 animate-in fade-in bg-black/5">
-          <div className="bg-white w-full max-w-5xl rounded-[3rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+          <div className="bg-white w-full max-w-5xl rounded-[10px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
             <header className="p-8 border-b border-brand-border flex justify-between items-center bg-slate-50/50">
               <div>
                 <h3 className="text-2xl font-black text-brand-depth">{MEAL_TYPES.find(t => t.id === isSelecting.type)?.label} uchun taom tanlash</h3>
@@ -422,7 +421,7 @@ const NutritionistView: React.FC = () => {
       {/* Dish Management Modal */}
       {isManagingDishes && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 animate-in fade-in bg-black/5">
-          <div className="bg-white w-full max-w-6xl rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+          <div className="bg-white w-full max-w-6xl rounded-[10px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
             <header className="p-8 border-b border-brand-border flex justify-between items-center bg-slate-50/50">
               <div>
                 <h3 className="text-2xl font-black text-brand-depth">Taomlar Bazasi</h3>

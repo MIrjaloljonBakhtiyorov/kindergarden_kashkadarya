@@ -20,7 +20,7 @@ export class HealthController {
   }
 
   async getHistory(req: Request, res: Response) {
-    const { groupId } = req.params;
+    const groupId = req.params.groupId as string;
     try {
       const history = await healthRepo.getHistoryByGroup(groupId);
       res.json(history);

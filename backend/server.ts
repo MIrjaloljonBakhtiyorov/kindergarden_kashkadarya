@@ -8,6 +8,7 @@ import { ChildrenController } from "./src/modules/children/children.controller";
 import { GroupsController } from "./src/modules/groups/groups.controller";
 import { StaffController } from "./src/modules/staff/staff.controller";
 import { HealthController } from "./src/modules/health/health.controller";
+import { InspectorController } from "./src/modules/inspector/inspector.controller";
 import { OperationsRepository } from "./src/modules/operations/operations.repository";
 import crypto from "crypto";
 import multer from "multer";
@@ -35,22 +36,19 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
+const logOperation = (type: string, entity: string, name: string, description: string, category: 'INCOMING' | 'OUTGOING' | 'OTHER' = 'OTHER') => {
+  OperationsRepository.log(type, entity, name, description, category).catch(console.error);
+};
+
 // API routes
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", message: "Backend is running" });
 });
 
-// Helper for logging operations
-const logOperation = (type: string, entity: string, name: string, desc: string) => {
-  const id = crypto.randomUUID();
-  db.run('INSERT INTO operations_log (id, operation_type, entity_type, entity_name, description) VALUES (?, ?, ?, ?, ?)',
-    [id, type, entity, name, desc]);
-};
-
-app.post("/api/upload", upload.single("image"), (req, res) => {
+app.post("/api/upload", upload.single("image"), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: "Fayl yuklanmadi" });
   const fileUrl = `http://localhost:3001/uploads/${req.file.filename}`;
-  logOperation('UPLOAD', 'FILE', req.file.filename, 'Yangi fayl yuklandi');
+  await OperationsRepository.log('UPLOAD', 'FILE', req.file.filename, 'Yangi fayl yuklandi', 'OTHER');
   res.json({ url: fileUrl });
 });
 
@@ -63,7 +61,7 @@ app.post("/api/auth/login", (req, res) => {
     const match = await bcrypt.compare(password, user.password_hash);
     if (!match) return res.status(401).json({ error: "Login yoki parol noto'g'ri" });
 
-    logOperation('LOGIN', 'USER', user.full_name, 'Tizimga kirildi (Xodim)');
+    await OperationsRepository.log('LOGIN', 'USER', user.full_name, 'Tizimga kirildi (Xodim)', 'OTHER');
     res.json({
       id: user.id,
       login: user.login,
@@ -82,7 +80,7 @@ app.post("/api/auth/parent-login", (req, res) => {
     const match = await bcrypt.compare(password, account.password_hash);
     if (!match) return res.status(401).json({ error: "Login yoki parol noto'g'ri" });
 
-    logOperation('LOGIN', 'PARENT', account.child_name || account.login, 'Tizimga kirildi (Ota-ona)');
+    await OperationsRepository.log('LOGIN', 'PARENT', account.child_name || account.login, 'Tizimga kirildi (Ota-ona)', 'OTHER');
     res.json({
       id: account.id,
       login: account.login,
@@ -265,6 +263,8 @@ app.put("/api/staff/:id", staffController.update);
 app.delete("/api/staff/:id", staffController.delete);
 
 const healthController = new HealthController();
+const inspectorController = new InspectorController();
+app.use("/api/inspector", inspectorController.router);
 app.post("/api/health/batch", healthController.saveBatch);
 app.get("/api/health/history/:groupId", healthController.getHistory);
 app.get("/api/health/archive", healthController.getArchive);
@@ -304,7 +304,7 @@ app.get("/api/attendance/today-stats", async (req, res) => {
     });
 
     let groupFilter = "";
-    const params = [];
+    const params: any[] = [];
     if (groupIds) {
       const ids = (groupIds as string).split(',');
       groupFilter = `WHERE group_id IN (${ids.map(() => '?').join(',')})`;
@@ -383,16 +383,37 @@ app.get("/api/attendance/today-stats", async (req, res) => {
 });
 
 const operationsRepo = new OperationsRepository();
+
 app.get("/api/operations", async (req, res) => {
-  const { days } = req.query;
+  const { days, category, includeArchived } = req.query;
   try {
     let operations;
-    if (days && !isNaN(Number(days))) {
+    if (category) {
+      operations = await operationsRepo.findByCategory(category as string);
+    } else if (days && !isNaN(Number(days))) {
       operations = await operationsRepo.findRecent(Number(days));
     } else {
-      operations = await operationsRepo.findAll(50);
+      operations = await operationsRepo.findAll(50, includeArchived === 'true');
     }
     res.json(operations);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/api/operations/archived", async (req, res) => {
+  try {
+    const operations = await operationsRepo.findArchived(100);
+    res.json(operations);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/operations/archive/:id", async (req, res) => {
+  try {
+    await operationsRepo.archive(req.params.id);
+    res.json({ success: true });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -679,19 +700,37 @@ app.get("/api/inventory/products", (req, res) => {
     db.all('SELECT * FROM inventory_batches', [], (err, batches: any[]) => {
       if (err) return res.status(500).json({ error: err.message });
       
-      const productsWithBatches = products.map(p => ({
-        ...p,
-        batches: batches.filter(b => b.product_id === p.id).map(b => ({
-          ...b,
-          expiryDate: b.expiry_date, // Frontend camelCase compatibility
-          receivedDate: b.received_date,
-          batchNumber: b.batch_number,
-          pricePerUnit: b.price_per_unit,
-          totalPrice: b.total_price,
-          storageLocation: b.storage_location,
-          storageTemp: b.storage_temp
-        }))
-      }));
+      const productsWithBatches = products.map(p => {
+        const productBatches = batches.filter(b => b.product_id === p.id);
+        const total_quantity = productBatches.reduce((sum, b) => sum + (b.quantity || 0), 0);
+        
+        let nearestExpiry = null;
+        const batchesWithExpiry = productBatches.filter(b => b.expiry_date && b.quantity > 0);
+        if (batchesWithExpiry.length > 0) {
+          const sortedBatches = [...batchesWithExpiry].sort((a, b) => new Date(a.expiry_date).getTime() - new Date(b.expiry_date).getTime());
+          nearestExpiry = sortedBatches[0].expiry_date;
+        }
+
+        const totalValue = productBatches.reduce((sum, b) => sum + ((b.quantity || 0) * (b.price_per_unit || 0)), 0);
+        const avg_price = total_quantity > 0 ? totalValue / total_quantity : 0;
+
+        return {
+          ...p,
+          total_quantity,
+          avg_price,
+          expiry_date: nearestExpiry,
+          batches: productBatches.map(b => ({
+            ...b,
+            expiryDate: b.expiry_date,
+            receivedDate: b.received_date,
+            batchNumber: b.batch_number,
+            pricePerUnit: b.price_per_unit,
+            totalPrice: b.total_price,
+            storageLocation: b.storage_location,
+            storageTemp: b.storage_temp
+          }))
+        };
+      });
       res.json(productsWithBatches);
     });
   });
@@ -758,10 +797,10 @@ app.post("/api/inventory/stock-in", (req, res) => {
       VALUES (?, ?, 'IN', ?, ?, ?, ?)
     `, [transId, product_id, quantity, price_per_unit, date, batchId]);
 
-    db.run("COMMIT", (err) => {
+    db.run("COMMIT", async (err) => {
       if (err) res.status(500).json({ error: err.message });
       else {
-        logOperation('INVENTORY', 'STOCK_IN', product_id, `${quantity} miqdorida mahsulot qabul qilindi`);
+        await OperationsRepository.log('INVENTORY', 'STOCK_IN', product_id, `${quantity} miqdorida mahsulot qabul qilindi`, 'INCOMING');
         res.json({ success: true, batchId });
       }
     });
@@ -810,10 +849,10 @@ app.post("/api/inventory/stock-out", (req, res) => {
           VALUES (?, ?, ?, ?, ?, ?, ?)
         `, [t.id, t.product_id, t.type, t.quantity, t.price, t.date, t.batch_id]);
       });
-      db.run("COMMIT", (err) => {
+      db.run("COMMIT", async (err) => {
         if (err) res.status(500).json({ error: err.message });
         else {
-          logOperation('INVENTORY', 'STOCK_OUT', product_id, `${quantity} miqdorida mahsulot chiqim qilindi`);
+          await OperationsRepository.log('INVENTORY', 'STOCK_OUT', product_id, `${quantity} miqdorida mahsulot chiqim qilindi`, 'OUTGOING');
           res.json({ success: true });
         }
       });
@@ -1269,6 +1308,63 @@ app.delete("/api/parent-portal/documents/:id", (req, res) => {
       logOperation('DELETE', 'DOCUMENT', id, 'Hujjat o\'chirildi');
       res.json({ success: true });
     }
+  });
+});
+
+// Chef Sanitary Checks API
+app.get("/api/chef/sanitary-check/status/:chefId/:date", (req, res) => {
+  const { chefId, date } = req.params;
+  db.get('SELECT * FROM chef_sanitary_checks WHERE chef_id = ? AND date = ?', [chefId, date], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ passed: !!row, data: row });
+  });
+});
+
+app.post("/api/chef/sanitary-check", (req, res) => {
+  const { chef_id, date, checks } = req.body;
+  const id = crypto.randomUUID();
+  db.run(`
+    INSERT INTO chef_sanitary_checks (id, chef_id, date, checks_json)
+    VALUES (?, ?, ?, ?)
+    ON CONFLICT(chef_id, date) DO UPDATE SET
+      checks_json = excluded.checks_json
+  `, [id, chef_id, date, JSON.stringify(checks)], function(err) {
+    if (err) return res.status(500).json({ error: err.message });
+    logOperation('CHEF', 'SANITARY_CHECK', chef_id, `Sanitariya tekshiruvi yakunlandi: ${date}`);
+    res.json({ success: true, id });
+  });
+});
+
+// Audits Archive API
+app.get("/api/audits/archive", (req, res) => {
+  db.all(`
+    SELECT date(created_at) as audit_date, COUNT(*) as count, 
+    SUM(CASE WHEN overall_result = 'PASS' THEN 1 ELSE 0 END) as passed,
+    SUM(CASE WHEN overall_result = 'FAIL' THEN 1 ELSE 0 END) as failed
+    FROM audits 
+    GROUP BY audit_date 
+    ORDER BY audit_date DESC
+  `, [], (err, rows) => {
+    if (err) res.status(500).json({ error: err.message });
+    else res.json(rows);
+  });
+});
+
+// Detailed Archive for a specific date
+app.get("/api/audits/archive/:date", (req, res) => {
+  const { date } = req.params;
+  db.all('SELECT * FROM audits WHERE date(created_at) = ? ORDER BY created_at DESC', [date], (err, audits: any[]) => {
+    if (err) return res.status(500).json({ error: err.message });
+    
+    db.all('SELECT * FROM audit_items WHERE audit_id IN (SELECT id FROM audits WHERE date(created_at) = ?)', [date], (err, items: any[]) => {
+      if (err) return res.status(500).json({ error: err.message });
+      
+      const fullAudits = audits.map(audit => ({
+        ...audit,
+        checklist_items: items.filter(item => item.audit_id === audit.id)
+      }));
+      res.json(fullAudits);
+    });
   });
 });
 

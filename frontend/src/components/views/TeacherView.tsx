@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import axios from 'axios';
+import apiClient from '../../api/apiClient';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   ClipboardCheck, 
@@ -36,7 +36,6 @@ interface TeacherViewProps {
 
 type AttendanceStatus = 'early' | 'late' | 'absent';
 
-const API_BASE_URL = 'http://localhost:3001/api';
 
 const TeacherView: React.FC<TeacherViewProps> = ({ groups: initialGroups }) => {
   const { groups, refetch: refetchGroups } = useGroups();
@@ -58,9 +57,10 @@ const TeacherView: React.FC<TeacherViewProps> = ({ groups: initialGroups }) => {
     try {
       const groupIds = displayGroups.map(g => (g as any).id).filter(Boolean).join(',');
       const url = groupIds 
-        ? `${API_BASE_URL}/attendance/today-stats?groupIds=${groupIds}`
-        : `${API_BASE_URL}/attendance/today-stats`;
-      const res = await axios.get(url);
+        ? `/attendance/today-stats?groupIds=${groupIds}` 
+        : `/attendance/today-stats`;
+      const res = await apiClient.get(url);
+
       setTodayStats(res.data);
     } catch (err) {
       console.error('Failed to fetch stats:', err);
@@ -232,7 +232,7 @@ const TeacherMessagesView = ({ groupData }: { groupData: any }) => {
   const loadUnreadCounts = useCallback(async () => {
     if (!user?.id) return;
     try {
-      const res = await axios.get(`${API_BASE_URL}/messages/unread-counts?userId=${user.id}`);
+      const res = await apiClient.get(`/messages/unread-counts?userId=${user.id}`);
       setUnreadCounts(res.data);
     } catch (error) {
       console.error('Failed to load unread counts:', error);
@@ -518,7 +518,7 @@ const TeacherMessagesView = ({ groupData }: { groupData: any }) => {
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
-              className="bg-white w-full max-w-md rounded-[3rem] shadow-2xl border border-brand-border overflow-hidden"
+              className="bg-white w-full max-w-md rounded-[10px] shadow-2xl border border-brand-border overflow-hidden"
             >
               <div className="p-8">
                 <div className="flex justify-between items-center mb-6">
@@ -567,7 +567,7 @@ const GroupAttendanceView = ({ groupData, onSaved }: { groupData: any, onSaved: 
       try {
         setIsLoading(true);
         const today = new Date().toISOString().split('T')[0];
-        const res = await axios.get(`${API_BASE_URL}/attendance/${groupData.id}/${today}`);
+        const res = await apiClient.get(`/attendance/${groupData.id}/${today}`);
         
         const initialAttendance = (groupData.children || []).reduce((acc: any, child: any) => {
           const existing = res.data[child.id];
@@ -655,7 +655,7 @@ const GroupAttendanceView = ({ groupData, onSaved }: { groupData: any, onSaved: 
         attendance_data: attendanceData
       };
 
-      await axios.post(`${API_BASE_URL}/attendance`, payload);
+      await apiClient.post(`/attendance`, payload);
       showNotification('Davomat muvaffaqiyatli saqlandi!', 'success');
       onSaved();
     } catch (err) {

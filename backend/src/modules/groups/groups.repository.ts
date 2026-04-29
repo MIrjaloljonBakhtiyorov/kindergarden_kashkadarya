@@ -78,7 +78,7 @@ export class GroupsRepository {
 
   async delete(id: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      db.get("SELECT name FROM groups WHERE id = ?", [id], (err, group) => {
+      db.get("SELECT name FROM groups WHERE id = ?", [id], (err, group: any) => {
         if (err) return reject(err);
         if (!group) return resolve();
 

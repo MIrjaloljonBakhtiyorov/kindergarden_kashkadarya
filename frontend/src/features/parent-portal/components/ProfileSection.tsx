@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { User, MapPin, Smartphone, Briefcase, Fingerprint, Target, Edit2, Save, X, Camera } from 'lucide-react';
 import { motion } from 'motion/react';
-import axios from 'axios';
+import apiClient from '../../../api/apiClient';
 import { useNotification } from '../../../context/NotificationContext';
 
-const API_BASE = 'http://localhost:3001/api';
 
 export const ProfileSection = ({ parentData, onUpdate }: any) => {
   const { showNotification } = useNotification();
@@ -31,7 +30,7 @@ export const ProfileSection = ({ parentData, onUpdate }: any) => {
     setLoading(true);
     try {
       // Use parentData.id which is the child_id in this context
-      await axios.put(`${API_BASE}/parent-portal/profile/${parentData.id}`, formData);
+      await apiClient.put(`/parent-portal/profile/${parentData.id}`, formData);
       showNotification("Ma'lumotlar muvaffaqiyatli yangilandi!", "success");
       setIsEditing(false);
       if (onUpdate) onUpdate();
@@ -52,7 +51,7 @@ export const ProfileSection = ({ parentData, onUpdate }: any) => {
 
     try {
       setLoading(true);
-      const res = await axios.post(`${API_BASE}/upload`, formDataUpload, {
+      const res = await apiClient.post(`/upload`, formDataUpload, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       setFormData({ ...formData, photo_url: res.data.url });

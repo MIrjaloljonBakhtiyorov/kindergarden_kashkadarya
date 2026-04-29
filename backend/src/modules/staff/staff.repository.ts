@@ -44,7 +44,7 @@ export class StaffRepository {
 
   async delete(id: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      db.get('SELECT full_name FROM staff WHERE id = ?', [id], async (err, staff) => {
+      db.get('SELECT full_name FROM staff WHERE id = ?', [id], async (err, staff: any) => {
         const name = staff ? staff.full_name : 'Noma\'lum';
         db.run('DELETE FROM staff WHERE id = ?', [id], async (err) => {
           if (err) reject(err);

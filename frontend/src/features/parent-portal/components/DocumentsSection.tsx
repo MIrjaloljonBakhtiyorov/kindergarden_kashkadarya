@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { FileText, ShieldCheck, Download, Clock, Plus, X, Upload, CheckCircle2, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import axios from 'axios';
+import apiClient from '../../../api/apiClient';
 import { useNotification } from '../../../context/NotificationContext';
 
-const API_BASE = 'http://localhost:3001/api';
 
 const DOC_TYPES = [
   { id: 'MEDICAL', label: 'Tibbiy ma\'lumotnoma' },
@@ -43,11 +42,11 @@ export const DocumentsSection = ({ data, childId, onUpdate }: any) => {
       const formData = new FormData();
       formData.append('image', newDoc.file); // Backend uses 'image' field for uploads
       
-      const uploadRes = await axios.post(`${API_BASE}/upload`, formData);
+      const uploadRes = await apiClient.post(`/upload`, formData);
       const fileUrl = uploadRes.data.url;
 
       // 2. Save document metadata
-      await axios.post(`${API_BASE}/parent-portal/documents`, {
+      await apiClient.post(`/parent-portal/documents`, {
         child_id: childId,
         title: newDoc.title,
         type: newDoc.type,

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { UserCircle, Lock, ArrowRight, Loader2 } from 'lucide-react';
 import { motion } from 'motion/react';
-import axios from 'axios';
+import apiClient from '../../api/apiClient';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
 
@@ -19,8 +19,8 @@ const LoginView: React.FC = () => {
     setLoading(true);
 
     try {
-      const endpoint = isParent ? 'http://localhost:3001/api/auth/parent-login' : 'http://localhost:3001/api/auth/login';
-      const response = await axios.post(endpoint, { login: loginInput, password });
+      const endpoint = isParent ? '/auth/parent-login' : '/auth/login';
+      const response = await apiClient.post(endpoint, { login: loginInput, password });
       
       login(response.data);
       showNotification(`Xush kelibsiz, ${response.data.full_name}!`, 'success');
@@ -37,7 +37,7 @@ const LoginView: React.FC = () => {
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white w-full max-w-md rounded-[40px] shadow-2xl shadow-brand-primary/5 border border-brand-border p-10 space-y-8"
+        className="bg-white w-full max-w-md rounded-[10px] shadow-2xl shadow-brand-primary/5 border border-brand-border p-10 space-y-8"
       >
         <div className="text-center space-y-2">
           <div className="w-16 h-16 bg-brand-primary/10 text-brand-primary rounded-2xl flex items-center justify-center mx-auto mb-4">

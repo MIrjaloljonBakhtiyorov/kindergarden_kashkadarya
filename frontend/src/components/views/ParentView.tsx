@@ -25,7 +25,7 @@ import {
   X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import axios from 'axios';
+import apiClient from '../../api/apiClient';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
 
@@ -41,7 +41,6 @@ import { DocumentsSection } from '../../features/parent-portal/components/Docume
 import { PickupSection } from '../../features/parent-portal/components/PickupSection';
 import { MessagesSection } from '../../features/parent-portal/components/MessagesSection';
 
-const API_BASE = 'http://localhost:3001/api';
 
 type SettingsTab = 'profile' | 'security' | 'menu' | 'medical' | 'messages' | 'finance' | 'attendance' | 'documents' | 'pickup' | 'progress' | 'vaccines';
 
@@ -68,8 +67,8 @@ const ParentView = () => {
     setLoading(true);
     try {
       const [infoRes, fullRes] = await Promise.all([
-        axios.get(`${API_BASE}/parent-portal/child-info/${childId}`),
-        axios.get(`${API_BASE}/parent-portal/full-data/${childId}`)
+        apiClient.get(`/parent-portal/child-info/${childId}`),
+        apiClient.get(`/parent-portal/full-data/${childId}`)
       ]);
       setParentData(infoRes.data);
       setFullPortalData(fullRes.data);
@@ -123,7 +122,7 @@ const ParentView = () => {
     }
     setIsSaving(true);
     try {
-      await axios.put(`${API_BASE}/parents/${user?.id}`, {
+      await apiClient.put(`/parents/${user?.id}`, {
         login: credentials.login,
         password: credentials.newPassword
       });

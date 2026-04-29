@@ -26,10 +26,9 @@ import {
   Trash2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import axios from 'axios';
+import apiClient from '../../api/apiClient';
 import { useNotification } from '../../context/NotificationContext';
 
-const API_BASE = 'http://localhost:3001/api';
 
 type SupplyTab = 'REQUIRED' | 'ORDERS' | 'SUPPLIERS' | 'PLAN';
 
@@ -70,7 +69,7 @@ const SupplyView: React.FC = () => {
 
   const fetchOrders = async () => {
     try {
-      const res = await axios.get(`${API_BASE}/supply/orders`);
+      const res = await apiClient.get(`/supply/orders`);
       setOrders(res.data);
     } catch (err) {
       console.error(err);
@@ -79,7 +78,7 @@ const SupplyView: React.FC = () => {
 
   const fetchSuppliers = async () => {
     try {
-      const res = await axios.get(`${API_BASE}/suppliers`);
+      const res = await apiClient.get(`/suppliers`);
       setSuppliers(res.data);
     } catch (err) {
       console.error(err);
@@ -89,7 +88,7 @@ const SupplyView: React.FC = () => {
   const fetchRequiredProducts = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`${API_BASE}/supply/required-products`);
+      const res = await apiClient.get(`/supply/required-products`);
       setRequiredProducts(res.data);
     } catch (err) {
       console.error(err);
@@ -101,7 +100,7 @@ const SupplyView: React.FC = () => {
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await axios.post(`${API_BASE}/supply/required-products`, {
+      await apiClient.post(`/supply/required-products`, {
         ...productForm,
         price: parseFloat(productForm.price),
         quantity: parseFloat(productForm.quantity)
@@ -118,7 +117,7 @@ const SupplyView: React.FC = () => {
   const handleAddSupplier = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await axios.post(`${API_BASE}/suppliers`, supplierForm);
+      await apiClient.post(`/suppliers`, supplierForm);
       showNotification("Yetkazib beruvchi muvaffaqiyatli qo'shildi!", "success");
       setShowSupplierModal(false);
       fetchSuppliers();
@@ -230,7 +229,7 @@ const SupplyView: React.FC = () => {
                initial={{ scale: 0.9, opacity: 0 }} 
                animate={{ scale: 1, opacity: 1 }} 
                exit={{ scale: 0.9, opacity: 0 }}
-               className="bg-white w-full max-w-lg rounded-[3rem] p-10 shadow-2xl border border-slate-200"
+               className="bg-white w-full max-w-lg rounded-[10px] p-10 shadow-2xl border border-slate-200"
              >
                 <div className="flex justify-between items-center mb-10">
                    <div>
@@ -283,7 +282,7 @@ const SupplyView: React.FC = () => {
                initial={{ scale: 0.9, opacity: 0 }} 
                animate={{ scale: 1, opacity: 1 }} 
                exit={{ scale: 0.9, opacity: 0 }}
-               className="bg-white w-full max-w-lg rounded-[3rem] p-10 shadow-2xl border border-slate-200"
+               className="bg-white w-full max-w-lg rounded-[10px] p-10 shadow-2xl border border-slate-200"
              >
                 <div className="flex justify-between items-center mb-10">
                    <div>

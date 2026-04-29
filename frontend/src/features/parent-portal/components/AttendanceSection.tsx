@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { Calendar, UserCheck, AlertCircle, Clock, ChevronRight, CheckCircle2, XCircle, Download, Save, History, TrendingUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import axios from 'axios';
+import apiClient from '../../../api/apiClient';
 import { useNotification } from '../../../context/NotificationContext';
 
-const API_BASE = 'http://localhost:3001/api';
 
 export const AttendanceSection = ({ data, childId, onUpdate }: any) => {
   const { showNotification } = useNotification();
@@ -24,7 +23,7 @@ export const AttendanceSection = ({ data, childId, onUpdate }: any) => {
       tomorrow.setDate(tomorrow.getDate() + 1);
       const dateStr = tomorrow.toISOString().split('T')[0];
 
-      await axios.post(`${API_BASE}/attendance`, {
+      await apiClient.post(`/attendance`, {
         date: dateStr,
         attendance_data: {
           [childId]: tomorrowAttending ? 'PRESENT' : 'ABSENT'

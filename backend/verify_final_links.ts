@@ -34,7 +34,7 @@ db.serialize(() => {
       console.table(rows);
       
       // Tekshiruv natijasini tahlil qilish
-      const brokenLinks = rows.filter(r => !r.tarbiyachi_logini);
+      const brokenLinks = rows.filter((r: any) => !r.tarbiyachi_logini);
       if (brokenLinks.length > 0) {
         console.log('DIQQAT: Ayrim guruhlarda tarbiyachi biriktirilmagan!');
       } else {
