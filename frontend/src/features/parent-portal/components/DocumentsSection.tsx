@@ -130,7 +130,7 @@ export const DocumentsSection = ({ data, childId, onUpdate }: any) => {
                   animate={{ opacity: 1 }} 
                   exit={{ opacity: 0 }}
                   onClick={() => setIsModalOpen(false)}
-                  className="absolute inset-0 bg-brand-depth/60 backdrop-blur-md"
+                  className="absolute inset-0"
                 />
                 <motion.div 
                   initial={{ opacity: 0, scale: 0.9, y: 20 }}

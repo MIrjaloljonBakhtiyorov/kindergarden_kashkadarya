@@ -32,6 +32,7 @@ import { useGroups } from './features/groups/hooks/useGroups';
 const App: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
   const [currentRole, setCurrentRole] = useState<UserRole>('DIRECTOR');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { groups } = useGroups();
 
   useEffect(() => {
@@ -90,17 +91,43 @@ const App: React.FC = () => {
 
   return (
     <div className="flex min-h-screen bg-slate-50 font-sans text-brand-depth">
-      {/* Sidebar - Hidden for Parents (though PARENT is deactivated) */}
+      {/* Sidebar - Hidden for Parents */}
       {!isParent && (
-        <div className="w-72 hidden lg:block h-screen sticky top-0">
-          <Sidebar activeRole={currentRole} onRoleChange={(role) => setCurrentRole(role as UserRole)} />
-        </div>
+        <>
+          {/* Mobile Overlay */}
+          {isSidebarOpen && (
+            <div 
+              className="fixed inset-0 z-[55] lg:hidden"
+              onClick={() => setIsSidebarOpen(false)}
+            ></div>
+          )}
+
+          {/* Sidebar container */}
+          <div className={`
+            fixed inset-y-0 left-0 z-[60] w-72 bg-white transform transition-transform duration-300 lg:translate-x-0 lg:static lg:block
+            ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+          `}>
+            <Sidebar 
+              activeRole={currentRole} 
+              onRoleChange={(role) => {
+                setCurrentRole(role as UserRole);
+                setIsSidebarOpen(false); // Close on selection on mobile
+              }} 
+              onClose={() => setIsSidebarOpen(false)}
+            />
+          </div>
+        </>
       )}
 
       <div className="flex-1 flex flex-col min-w-0">
-        {!isParent && <TopBar role={currentRole} />}
+        {!isParent && (
+          <TopBar 
+            role={currentRole} 
+            onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} 
+          />
+        )}
         
-        <main className={`flex-1 overflow-y-auto ${isParent ? 'p-0' : 'p-6 lg:p-10'}`}>
+        <main className={`flex-1 overflow-y-auto ${isParent ? 'p-0' : 'p-4 sm:p-6 lg:p-10'}`}>
           <div className={`${isParent ? 'w-full' : 'max-w-[1600px] mx-auto'}`}>
             <AnimatePresence mode="wait">
               <div key={currentRole}>

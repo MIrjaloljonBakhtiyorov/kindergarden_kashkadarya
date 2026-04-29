@@ -352,7 +352,7 @@ const StorekeeperView: React.FC = () => {
       {/* Product Form Modal (Add / Edit) */}
       <AnimatePresence>
         {isAddModalOpen && (
-          <div className="fixed inset-0 bg-brand-depth/80 backdrop-blur-xl flex items-center justify-center z-[110] p-4">
+          <div className="fixed inset-0 flex items-center justify-center z-[110] p-4">
             <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="bg-white w-full max-w-6xl rounded-[3rem] p-10 shadow-2xl overflow-y-auto max-h-[95vh] relative scrollbar-hidden">
               <div className="flex justify-between items-start mb-10 text-brand-depth font-black">
                 <div>
@@ -430,7 +430,7 @@ const StorekeeperView: React.FC = () => {
       {/* Stock In & Stock Out modals (Same as before but integrated) */}
       <AnimatePresence>
         {isStockInModalOpen && (
-          <div className="fixed inset-0 bg-brand-depth/80 backdrop-blur-xl flex items-center justify-center z-[110] p-4">
+          <div className="fixed inset-0 flex items-center justify-center z-[110] p-4">
             <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="bg-white w-full max-w-4xl rounded-[3rem] p-10 shadow-2xl overflow-y-auto max-h-[95vh] relative scrollbar-hidden">
               <div className="flex justify-between items-start mb-10 text-brand-depth font-black">
                 <h3 className="text-4xl tracking-tight">Zaxira kirimi</h3>
@@ -474,7 +474,7 @@ const StorekeeperView: React.FC = () => {
       {/* Stock Out Modal (Compact) */}
       <AnimatePresence>
         {isOutModalOpen && (
-          <div className="fixed inset-0 bg-brand-depth/80 backdrop-blur-xl flex items-center justify-center z-[110] p-4">
+          <div className="fixed inset-0 flex items-center justify-center z-[110] p-4">
             <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="bg-white w-full max-w-xl rounded-[3rem] p-12 shadow-2xl relative">
               <div className="flex justify-between items-start mb-10"><h3 className="text-3xl font-black text-brand-depth tracking-tight">Mahsulot chiqimi</h3><button onClick={() => setIsOutModalOpen(false)} className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center hover:bg-rose-50 hover:text-rose-500 transition-all font-black text-2xl">&times;</button></div>
               <form onSubmit={handleStockOut} className="space-y-8">

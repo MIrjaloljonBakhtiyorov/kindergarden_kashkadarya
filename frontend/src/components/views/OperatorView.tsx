@@ -27,7 +27,7 @@ import { ParentsTable } from '../../features/parents/components/ParentsTable';
 import { useChildren } from '../../features/children/hooks/useChildren';
 import { useGroups } from '../../features/groups/hooks/useGroups';
 import { useStaff } from '../../features/staff/hooks/useStaff';
-import { useOperations } from '../../features/operations/hooks/useOperations';
+import { OperationsLog } from '../../features/operations/components/OperationsLog';
 import { useNotification } from '../../context/NotificationContext';
 
 interface OperatorViewProps {
@@ -42,7 +42,6 @@ const OperatorView: React.FC<OperatorViewProps> = ({ groups: initialGroups, setG
   const { children, createChild } = useChildren();
   const { groups } = useGroups();
   const { staff } = useStaff();
-  const { operations } = useOperations();
   const { showNotification } = useNotification();
 
   const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -117,24 +116,6 @@ const OperatorView: React.FC<OperatorViewProps> = ({ groups: initialGroups, setG
       }
     };
     reader.readAsBinaryString(file);
-  };
-
-  const getOperationIcon = (type: string) => {
-    switch (type) {
-      case 'CREATE': return <Plus size={14} />;
-      case 'UPDATE': return <Edit2 size={14} />;
-      case 'DELETE': return <Trash2 size={14} />;
-      default: return <History size={14} />;
-    }
-  };
-
-  const getOperationColor = (type: string) => {
-    switch (type) {
-      case 'CREATE': return 'bg-emerald-100 text-emerald-600';
-      case 'UPDATE': return 'bg-amber-100 text-amber-600';
-      case 'DELETE': return 'bg-rose-100 text-rose-600';
-      default: return 'bg-slate-100 text-slate-600';
-    }
   };
 
   const handleEditChild = (child: any) => {
@@ -272,46 +253,10 @@ const OperatorView: React.FC<OperatorViewProps> = ({ groups: initialGroups, setG
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-brand-border shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-brand-border flex items-center justify-between">
-           <h4 className="font-bold text-base flex items-center gap-2">
-             <History size={18} className="text-brand-primary" />
-             So'nggi operatsiyalar
-           </h4>
-           <p className="text-[10px] text-brand-muted uppercase font-bold tracking-widest">Real vaqt rejimida</p>
-        </div>
-        <div className="divide-y divide-slate-50">
-           {operations.length === 0 ? (
-             <div className="p-20 text-center">
-                <p className="text-brand-muted font-bold uppercase tracking-[0.2em] text-xs">Hozircha hech qanday operatsiya bajarilmadi.</p>
-             </div>
-           ) : (
-             operations.map((op) => (
-               <div key={op.id} className="p-4 hover:bg-slate-50/50 transition-colors flex items-center justify-between">
-                 <div className="flex items-center gap-4">
-                    <div className={`p-2 rounded-lg ${getOperationColor(op.operation_type)}`}>
-                       {getOperationIcon(op.operation_type)}
-                    </div>
-                    <div>
-                       <div className="flex items-center gap-2">
-                          <span className="font-black text-sm text-brand-depth">{op.entity_name}</span>
-                          <span className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded font-bold text-brand-muted uppercase">{op.entity_type}</span>
-                       </div>
-                       <p className="text-xs text-brand-slate font-medium">{op.description}</p>
-                    </div>
-                 </div>
-                 <div className="flex items-center gap-1.5 text-brand-muted">
-                    <Clock size={12} />
-                    <span className="text-[10px] font-bold">{new Date(op.created_at).toLocaleTimeString()}</span>
-                 </div>
-               </div>
-             ))
-           )}
-        </div>
-      </div>
+      <OperationsLog />
 
       {viewMode !== 'DASHBOARD' && (
-        <div className="fixed inset-0 bg-brand-depth/70 backdrop-blur-md flex items-center justify-center z-[100] p-4 lg:p-12 animate-in fade-in duration-300">
+        <div className="fixed inset-0 flex items-center justify-center z-[100] p-4 lg:p-12 animate-in fade-in duration-300">
            <div className="bg-slate-50 w-full max-w-6xl h-full max-h-[90vh] rounded-[40px] shadow-2xl relative overflow-hidden flex flex-col border border-white/20">
               <div className="absolute top-6 right-8 z-10">
                 <button 

@@ -124,7 +124,7 @@ export const PickupSection = ({ data, onUpdate }: any) => {
                <motion.div 
                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                  onClick={() => setShowModal(false)}
-                 className="absolute inset-0 bg-brand-depth/40 backdrop-blur-md"
+                 className="absolute inset-0"
                />
                <motion.div 
                  initial={{ opacity: 0, scale: 0.9, y: 20 }}

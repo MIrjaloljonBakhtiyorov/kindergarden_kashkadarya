@@ -4,7 +4,8 @@ import {
   Bell, 
   Settings, 
   LogOut,
-  UserCircle
+  UserCircle,
+  Menu
 } from 'lucide-react';
 import { UserRole } from '../../types';
 import { ROLES_INFO } from '../../constants/mockData';
@@ -12,17 +13,25 @@ import { useAuth } from '../../context/AuthContext';
 
 interface TopBarProps {
   role: UserRole;
+  onMenuClick?: () => void;
 }
 
-const TopBar: React.FC<TopBarProps> = ({ role }) => {
+const TopBar: React.FC<TopBarProps> = ({ role, onMenuClick }) => {
   const { user, logout } = useAuth();
 
   return (
-    <div className="h-20 bg-white border-b border-brand-border flex items-center justify-between px-6 lg:px-10 sticky top-0 z-40 backdrop-blur-md bg-white/80">
-      <div className="flex items-center gap-8">
+    <div className="h-20 bg-white border-b border-brand-border flex items-center justify-between px-4 sm:px-6 lg:px-10 sticky top-0 z-40 backdrop-blur-md bg-white/80">
+      <div className="flex items-center gap-4 lg:gap-8">
+        <button 
+          onClick={onMenuClick}
+          className="p-2 -ml-2 text-brand-slate hover:bg-slate-50 rounded-lg lg:hidden transition-colors"
+        >
+          <Menu size={24} />
+        </button>
+
         <div>
-          <h2 className="text-xl font-display font-bold text-brand-depth leading-none mb-1">{ROLES_INFO[role]?.label || role}</h2>
-          <p className="text-[10px] text-brand-slate uppercase font-bold tracking-widest">{ROLES_INFO[role]?.description || 'Tizim foydalanuvchisi'}</p>
+          <h2 className="text-lg sm:text-xl font-display font-bold text-brand-depth leading-none mb-1">{ROLES_INFO[role]?.label || role}</h2>
+          <p className="text-[10px] text-brand-slate uppercase font-bold tracking-widest hidden sm:block">{ROLES_INFO[role]?.description || 'Tizim foydalanuvchisi'}</p>
         </div>
       </div>
 

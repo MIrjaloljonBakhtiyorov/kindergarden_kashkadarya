@@ -11,7 +11,8 @@ import {
   Smartphone,
   Truck,
   Coins,
-  LogOut
+  LogOut,
+  X
 } from 'lucide-react';
 import { UserRole, NavItem } from '../../types';
 import { useAuth } from '../../context/AuthContext';
@@ -19,9 +20,10 @@ import { useAuth } from '../../context/AuthContext';
 interface SidebarProps {
   activeRole: UserRole;
   onRoleChange: (role: UserRole) => void;
+  onClose?: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ activeRole, onRoleChange }) => {
+const Sidebar: React.FC<SidebarProps> = ({ activeRole, onRoleChange, onClose }) => {
   const { user, logout } = useAuth();
 
   const allMenuItems: NavItem[] = [
@@ -43,7 +45,17 @@ const Sidebar: React.FC<SidebarProps> = ({ activeRole, onRoleChange }) => {
     : allMenuItems.filter(item => item.id === user?.role);
 
   return (
-    <div className="w-full h-full bg-white flex flex-col border-r border-brand-border overflow-y-auto custom-scrollbar">
+    <div className="w-full h-full bg-white flex flex-col border-r border-brand-border overflow-y-auto custom-scrollbar relative">
+      {/* Mobile Close Button */}
+      {onClose && (
+        <button 
+          onClick={onClose}
+          className="absolute top-6 right-6 p-2 text-brand-slate hover:bg-slate-50 rounded-lg lg:hidden transition-colors z-10"
+        >
+          <X size={20} />
+        </button>
+      )}
+
       <div className="p-8 border-b border-brand-border shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-brand-primary rounded-xl flex items-center justify-center shadow-lg shadow-brand-primary/20">

@@ -32,4 +32,17 @@ export class OperationsRepository {
       );
     });
   }
+
+  async findRecent(days: number): Promise<any[]> {
+    return new Promise((resolve, reject) => {
+      db.all(
+        "SELECT * FROM operations_log WHERE created_at >= datetime('now', '-' || ? || ' days') ORDER BY created_at DESC",
+        [days],
+        (err, rows) => {
+          if (err) reject(err);
+          else resolve(rows);
+        }
+      );
+    });
+  }
 }

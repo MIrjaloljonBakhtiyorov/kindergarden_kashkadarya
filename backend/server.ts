@@ -318,13 +318,15 @@ app.get("/api/attendance/today-stats", async (req, res) => {
       SELECT 
         SUM(CASE WHEN status = 'PRESENT' THEN 1 ELSE 0 END) as present,
         SUM(CASE WHEN status = 'ABSENT' THEN 1 ELSE 0 END) as absent,
-        SUM(CASE WHEN status = 'SICK' THEN 1 ELSE 0 END) as sick_attendance
+        SUM(CASE WHEN status = 'SICK' THEN 1 ELSE 0 END) as sick_attendance,
+        SUM(CASE WHEN status = 'PRESENT' AND (arrival_time > '09:00:00' OR arrival_time LIKE '09:%' AND arrival_time > '09:00:00') THEN 1 ELSE 0 END) as late
       FROM attendance
       WHERE date = ?
     `, [today]);
 
     stats.present = attendance?.present || 0;
     stats.absent = attendance?.absent || 0;
+    stats.late = attendance?.late || 0;
     const sickAttendance = attendance?.sick_attendance || 0;
 
     const health: any = await fetchOne(`
@@ -335,7 +337,12 @@ app.get("/api/attendance/today-stats", async (req, res) => {
       WHERE date = ?
     `, [today]);
 
+    const approvedMenus: any = await fetchOne(`
+      SELECT COUNT(*) as count FROM menus WHERE date = ? AND is_approved = 1
+    `, [today]);
+
     stats.checked = health?.checked || 0;
+    stats.approved_recipes = approvedMenus?.count || 0;
     stats.notChecked = stats.total - stats.checked;
     // Kasal bolalar = Davomatda kasal deb belgilanganlar + Hamshira kasal deb topganlar (takrorlanishni hisobga olmasdan, sodda jamlash)
     stats.sick = Math.max(sickAttendance, health?.sick_health || 0);
@@ -349,8 +356,14 @@ app.get("/api/attendance/today-stats", async (req, res) => {
 
 const operationsRepo = new OperationsRepository();
 app.get("/api/operations", async (req, res) => {
+  const { days } = req.query;
   try {
-    const operations = await operationsRepo.findAll(20);
+    let operations;
+    if (days && !isNaN(Number(days))) {
+      operations = await operationsRepo.findRecent(Number(days));
+    } else {
+      operations = await operationsRepo.findAll(50);
+    }
     res.json(operations);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -468,11 +481,20 @@ app.post("/api/attendance", (req, res) => {
 
   childIds.forEach(childId => {
     const status = attendance_data[childId].toUpperCase();
+    const currentTime = new Date().toLocaleTimeString('en-GB', { hour12: false });
+
     db.run(`
-      INSERT INTO attendance (id, child_id, date, status, reason)
-      VALUES (?, ?, ?, ?, ?)
-      ON CONFLICT(child_id, date) DO UPDATE SET status = excluded.status, reason = excluded.reason
-    `, [crypto.randomUUID(), childId, isoDate, status, reason || ''], function(err) {
+      INSERT INTO attendance (id, child_id, date, status, reason, arrival_time)
+      VALUES (?, ?, ?, ?, ?, ?)
+      ON CONFLICT(child_id, date) DO UPDATE SET 
+        status = excluded.status, 
+        reason = excluded.reason,
+        arrival_time = CASE 
+          WHEN excluded.status = 'PRESENT' AND (arrival_time IS NULL OR arrival_time = '') THEN ?
+          WHEN excluded.status != 'PRESENT' THEN NULL
+          ELSE arrival_time 
+        END
+    `, [crypto.randomUUID(), childId, isoDate, status, reason || '', status === 'PRESENT' ? currentTime : null, currentTime], function(err) {
       if (err && !hasError) {
         hasError = true;
         return res.status(500).json({ error: err.message });
@@ -483,6 +505,15 @@ app.post("/api/attendance", (req, res) => {
         res.json({ success: true });
       }
     });
+  });
+});
+
+app.post("/api/menus/approve-today", (req, res) => {
+  const today = new Date().toISOString().split('T')[0];
+  db.run('UPDATE menus SET is_approved = 1 WHERE date = ?', [today], function(err) {
+    if (err) return res.status(500).json({ error: err.message });
+    logOperation('MENU', 'APPROVE', today, 'Bugungi ovqat retseptlari admin tomonidan tasdiqlandi');
+    res.json({ success: true, updated: this.changes });
   });
 });
 

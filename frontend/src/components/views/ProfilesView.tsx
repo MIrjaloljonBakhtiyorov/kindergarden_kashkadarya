@@ -278,7 +278,7 @@ const ProfilesView: React.FC = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setEditingParent(null)}
-              className="absolute inset-0 bg-brand-depth/80 backdrop-blur-xl"
+              className="absolute inset-0"
             />
             <motion.div 
               initial={{ opacity: 0, scale: 0.9, y: 30 }}
