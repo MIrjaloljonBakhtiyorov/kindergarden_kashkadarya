@@ -1021,13 +1021,13 @@ app.post("/api/supply/required-products", (req, res) => {
 db.serialize(() => {
   db.run(`
     CREATE TABLE IF NOT EXISTS messages (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       sender_id TEXT NOT NULL,
       receiver_id TEXT NOT NULL,
       text TEXT NOT NULL,
       sender_role TEXT NOT NULL,
       status TEXT DEFAULT 'sent',
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `);
 });

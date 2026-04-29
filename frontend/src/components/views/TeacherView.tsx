@@ -10,7 +10,7 @@ import {
   Calendar,
   Users,
   Utensils,
-  Clock,
+  Clock as LucideClock,
   History as HistoryIcon,
   MessageCircle,
   Send,
@@ -65,12 +65,15 @@ const TeacherView: React.FC<TeacherViewProps> = ({ groups: initialGroups }) => {
     } catch (err) {
       console.error('Failed to fetch stats:', err);
     }
-  }, [displayGroups]);
+  }, [displayGroups.length]); // Use length as dependency to stabilize, or empty [] if we only want initial load
 
   useEffect(() => {
     fetchTodayStats();
+  }, [fetchTodayStats]);
+
+  useEffect(() => {
     refetchGroups();
-  }, [fetchTodayStats, refetchGroups]);
+  }, []); // Only refetch on mount if needed, or rely on useGroups initial fetch
 
   if (!selectedGroup) {
     const totalKids = todayStats.total;
@@ -595,7 +598,7 @@ const GroupAttendanceView = ({ groupData, onSaved }: { groupData: any, onSaved: 
   }, [groupData]);
 
   const stats = useMemo(() => {
-    const items = Object.values(attendance);
+    const items = Object.values(attendance) as { status: AttendanceStatus | null, arrival_time?: string | null }[];
     const early = items.filter(v => v.status === 'early').length;
     const late = items.filter(v => v.status === 'late').length;
     const absent = items.filter(v => v.status === 'absent').length;
@@ -697,7 +700,7 @@ const GroupAttendanceView = ({ groupData, onSaved }: { groupData: any, onSaved: 
 
         <div className="bg-amber-50/50 p-6 rounded-[2rem] border border-amber-100 flex flex-col items-center text-center">
           <div className="w-10 h-10 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center mb-4">
-            <Clock size={20} />
+            <LucideClock size={20} />
           </div>
           <p className="text-[9px] font-black text-amber-600 uppercase tracking-[0.2em] mb-1">9 dan keyin keladi</p>
           <p className="text-2xl font-black text-amber-600">{stats.late}</p>
@@ -764,7 +767,7 @@ const GroupAttendanceView = ({ groupData, onSaved }: { groupData: any, onSaved: 
                         : 'bg-slate-50 text-brand-muted border border-brand-border hover:bg-white'
                     }`}
                   >
-                    <Clock size={14} /> 9 dan keyin keladi
+                    <LucideClock size={14} /> 9 dan keyin keladi
                   </button>
                   <button 
                     onClick={() => handleStatusChange(child.id, 'absent')}

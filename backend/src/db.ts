@@ -1,39 +1,112 @@
-import sqlite3 from 'sqlite3';
+import { Pool } from 'pg';
 import path from 'path';
-import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/kindergarden'
+});
 
-// Bazani loyihaning ildizidagi 'data' papkasiga joylashtiramiz
-const dbPath = path.resolve(__dirname, '../../data/kindergarden.db');
+pool.on('error', (err) => {
+  console.error('Unexpected error on idle client', err);
+  process.exit(-1);
+});
 
-export const db = new sqlite3.Database(dbPath, (err) => {
+// Helper to convert SQLite ? to Postgres $1, $2, etc.
+function convertQuery(sql: string) {
+  let i = 1;
+  let pgSql = sql.replace(/\?/g, () => `$${i++}`);
+  
+  // If it's an INSERT and needs an ID returned, we might need RETURNING id
+  // but since we only need it for messages, let's just append it if we see INSERT INTO messages
+  if (pgSql.trim().toUpperCase().startsWith('INSERT INTO MESSAGES') && !pgSql.toUpperCase().includes('RETURNING')) {
+    pgSql += ' RETURNING id';
+  }
+  
+  // SQLite's ON CONFLICT DO UPDATE SET needs no change in Postgres if column names match
+  return pgSql;
+}
+
+export const db = {
+  run: (sql: string, params: any[] = [], callback?: (err: Error | null) => void) => {
+    if (typeof params === 'function') {
+      callback = params;
+      params = [];
+    }
+    const pgSql = convertQuery(sql);
+    pool.query(pgSql, params)
+      .then(result => {
+        if (callback) {
+          const context = { 
+            lastID: result.rows?.[0]?.id, 
+            changes: result.rowCount 
+          };
+          callback.bind(context)(null);
+        }
+      })
+      .catch(err => {
+        console.error('db.run error:', err, 'SQL:', pgSql, 'Params:', params);
+        if (callback) callback(err);
+      });
+  },
+  get: (sql: string, params: any[] = [], callback?: (err: Error | null, row?: any) => void) => {
+    if (typeof params === 'function') {
+      callback = params;
+      params = [];
+    }
+    const pgSql = convertQuery(sql);
+    pool.query(pgSql, params)
+      .then(result => {
+        if (callback) callback(null, result.rows[0]);
+      })
+      .catch(err => {
+        console.error('db.get error:', err, 'SQL:', pgSql, 'Params:', params);
+        if (callback) callback(err);
+      });
+  },
+  all: (sql: string, params: any[] = [], callback?: (err: Error | null, rows?: any[]) => void) => {
+    if (typeof params === 'function') {
+      callback = params;
+      params = [];
+    }
+    const pgSql = convertQuery(sql);
+    pool.query(pgSql, params)
+      .then(result => {
+        if (callback) callback(null, result.rows);
+      })
+      .catch(err => {
+        console.error('db.all error:', err, 'SQL:', pgSql, 'Params:', params);
+        if (callback) callback(err);
+      });
+  },
+  serialize: (callback: () => void) => {
+    callback();
+  }
+};
+
+pool.query("SELECT NOW()", (err) => {
   if (err) {
-    console.error('Error connecting to SQLite database:', err);
+    console.error('Error connecting to PostgreSQL database:', err);
   } else {
-    console.log('Connected to SQLite database at:', dbPath);
-    db.run("PRAGMA foreign_keys = ON");
+    console.log('Connected to PostgreSQL database');
     initDb();
   }
 });
 
 function addColumnIfNotExists(tableName: string, columnName: string, columnType: string) {
-  db.get(`PRAGMA table_info(${tableName})`, (err, info) => {
-    // This only gets the first column, we need to check all
-    db.all(`PRAGMA table_info(${tableName})`, (err, columns: any[]) => {
-      if (err) return;
-      const exists = columns.some(col => col.name === columnName);
-      if (!exists) {
-        db.run(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${columnType}`);
-      }
-    });
-  });
+  const checkSql = `
+    SELECT column_name 
+    FROM information_schema.columns 
+    WHERE table_name='${tableName}' AND column_name='${columnName}'
+  `;
+  pool.query(checkSql).then(res => {
+    if (res.rowCount === 0) {
+      pool.query(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${columnType}`).catch(console.error);
+    }
+  }).catch(console.error);
 }
 
-function initDb() {
-  db.serialize(() => {
-    db.run(`
+async function initDb() {
+  try {
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS groups (
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
@@ -43,7 +116,7 @@ function initDb() {
       )
     `);
 
-    db.run(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS parents (
         id TEXT PRIMARY KEY,
         full_name TEXT NOT NULL,
@@ -55,7 +128,7 @@ function initDb() {
     `);
     addColumnIfNotExists('parents', 'passport_no', 'TEXT');
 
-    db.run(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS parent_accounts (
         id TEXT PRIMARY KEY,
         login TEXT UNIQUE NOT NULL,
@@ -64,7 +137,7 @@ function initDb() {
       )
     `);
 
-    db.run(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS children (
         id TEXT PRIMARY KEY,
         first_name TEXT NOT NULL,
@@ -84,11 +157,11 @@ function initDb() {
         mother_id TEXT,
         parent_account_id TEXT,
         group_id TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (father_id) REFERENCES parents(id),
-        FOREIGN KEY (mother_id) REFERENCES parents(id),
-        FOREIGN KEY (parent_account_id) REFERENCES parent_accounts(id),
-        FOREIGN KEY (group_id) REFERENCES groups(id)
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (father_id) REFERENCES parents(id) ON DELETE SET NULL,
+        FOREIGN KEY (mother_id) REFERENCES parents(id) ON DELETE SET NULL,
+        FOREIGN KEY (parent_account_id) REFERENCES parent_accounts(id) ON DELETE SET NULL,
+        FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE SET NULL
       )
     `);
     addColumnIfNotExists('children', 'address', 'TEXT');
@@ -96,7 +169,7 @@ function initDb() {
     addColumnIfNotExists('children', 'height', 'REAL');
     addColumnIfNotExists('children', 'allergies', 'TEXT');
 
-    db.run(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS menus (
         id TEXT PRIMARY KEY,
         date TEXT NOT NULL,
@@ -107,23 +180,29 @@ function initDb() {
         vitamins TEXT,
         calories REAL,
         image_url TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        is_approved INTEGER DEFAULT 0,
+        age_group TEXT,
+        diet_type TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(date, meal_type, age_group, diet_type)
       )
     `);
     addColumnIfNotExists('menus', 'image_url', 'TEXT');
+    addColumnIfNotExists('menus', 'is_approved', 'INTEGER');
 
-    db.run(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS messages (
-        id TEXT PRIMARY KEY,
+        id SERIAL PRIMARY KEY,
         sender_id TEXT NOT NULL,
         receiver_id TEXT NOT NULL,
-        content TEXT NOT NULL,
-        status TEXT DEFAULT 'SENT',
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        text TEXT NOT NULL,
+        sender_role TEXT NOT NULL,
+        status TEXT DEFAULT 'sent',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
 
-    db.run(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS payments (
         id TEXT PRIMARY KEY,
         child_id TEXT NOT NULL,
@@ -131,35 +210,36 @@ function initDb() {
         date TEXT NOT NULL,
         receipt_url TEXT,
         status TEXT DEFAULT 'PAID',
-        FOREIGN KEY (child_id) REFERENCES children(id)
+        FOREIGN KEY (child_id) REFERENCES children(id) ON DELETE CASCADE
       )
     `);
 
-    db.run(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS attendance (
         id TEXT PRIMARY KEY,
         child_id TEXT NOT NULL,
         date TEXT NOT NULL,
         status TEXT NOT NULL,
         reason TEXT,
+        arrival_time TEXT,
         UNIQUE(child_id, date),
-        FOREIGN KEY (child_id) REFERENCES children(id)
+        FOREIGN KEY (child_id) REFERENCES children(id) ON DELETE CASCADE
       )
     `);
 
-    db.run(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS documents (
         id TEXT PRIMARY KEY,
         child_id TEXT NOT NULL,
         title TEXT NOT NULL,
         type TEXT NOT NULL,
         file_url TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (child_id) REFERENCES children(id)
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (child_id) REFERENCES children(id) ON DELETE CASCADE
       )
     `);
 
-    db.run(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS authorized_pickups (
         id TEXT PRIMARY KEY,
         child_id TEXT NOT NULL,
@@ -167,11 +247,11 @@ function initDb() {
         relation TEXT NOT NULL,
         phone TEXT NOT NULL,
         photo_url TEXT,
-        FOREIGN KEY (child_id) REFERENCES children(id)
+        FOREIGN KEY (child_id) REFERENCES children(id) ON DELETE CASCADE
       )
     `);
 
-    db.run(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS progress_reports (
         id TEXT PRIMARY KEY,
         child_id TEXT NOT NULL,
@@ -179,11 +259,11 @@ function initDb() {
         subject TEXT NOT NULL,
         rating INTEGER,
         comment TEXT,
-        FOREIGN KEY (child_id) REFERENCES children(id)
+        FOREIGN KEY (child_id) REFERENCES children(id) ON DELETE CASCADE
       )
     `);
 
-    db.run(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS vaccinations (
         id TEXT PRIMARY KEY,
         child_id TEXT NOT NULL,
@@ -191,13 +271,14 @@ function initDb() {
         planned_date TEXT NOT NULL,
         taken_date TEXT,
         status TEXT DEFAULT 'PLANNED',
-        FOREIGN KEY (child_id) REFERENCES children(id)
+        FOREIGN KEY (child_id) REFERENCES children(id) ON DELETE CASCADE
       )
     `);
 
-    db.run(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS staff (
         id TEXT PRIMARY KEY,
+        user_id TEXT,
         full_name TEXT NOT NULL,
         position TEXT,
         phone TEXT,
@@ -205,12 +286,12 @@ function initDb() {
         passport_no TEXT,
         group_id TEXT,
         status TEXT DEFAULT 'ACTIVE',
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (group_id) REFERENCES groups(id)
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE SET NULL
       )
     `);
 
-    db.run(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY,
         login TEXT UNIQUE NOT NULL,
@@ -218,11 +299,11 @@ function initDb() {
         role TEXT NOT NULL,
         full_name TEXT,
         status TEXT DEFAULT 'ACTIVE',
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
 
-    db.run(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS health_checks (
         id TEXT PRIMARY KEY,
         child_id TEXT NOT NULL,
@@ -233,24 +314,23 @@ function initDb() {
         allergy TEXT,
         is_sick BOOLEAN,
         notes TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (child_id) REFERENCES children(id)
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (child_id) REFERENCES children(id) ON DELETE CASCADE
       )
     `);
 
-    db.run(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS operations_log (
         id TEXT PRIMARY KEY,
         operation_type TEXT NOT NULL,
         entity_type TEXT NOT NULL,
         entity_name TEXT,
         description TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
 
-    // Lab Samples Table
-    db.run(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS lab_samples (
         id TEXT PRIMARY KEY,
         sample_id TEXT UNIQUE NOT NULL,
@@ -264,16 +344,15 @@ function initDb() {
         lab_result TEXT,
         risk_level TEXT NOT NULL,
         notes TEXT,
-        test_results TEXT, -- JSON string
-        storage_temp_history TEXT, -- JSON string
-        nutrition TEXT, -- JSON string
+        test_results TEXT,
+        storage_temp_history TEXT,
+        nutrition TEXT,
         created_by TEXT,
-        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
 
-    // Audits & Inspections
-    db.run(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS audits (
         id TEXT PRIMARY KEY,
         inspection_id TEXT UNIQUE NOT NULL,
@@ -283,11 +362,11 @@ function initDb() {
         notes TEXT,
         created_by TEXT,
         status TEXT DEFAULT 'OPEN',
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
 
-    db.run(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS audit_items (
         id TEXT PRIMARY KEY,
         audit_id TEXT NOT NULL,
@@ -295,12 +374,11 @@ function initDb() {
         result TEXT NOT NULL,
         note TEXT,
         severity TEXT,
-        FOREIGN KEY (audit_id) REFERENCES audits(id)
+        FOREIGN KEY (audit_id) REFERENCES audits(id) ON DELETE CASCADE
       )
     `);
 
-    // Finance Transactions
-    db.run(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS finance_transactions (
         id TEXT PRIMARY KEY,
         date TEXT NOT NULL,
@@ -310,11 +388,11 @@ function initDb() {
         quantity TEXT,
         price_per_unit TEXT,
         type TEXT DEFAULT 'EXPENSE',
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
 
-    db.run(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS products (
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
@@ -325,7 +403,7 @@ function initDb() {
       )
     `);
 
-    db.run(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS inventory_batches (
         id TEXT PRIMARY KEY,
         product_id TEXT NOT NULL,
@@ -340,13 +418,11 @@ function initDb() {
         storage_location TEXT,
         storage_temp REAL,
         notes TEXT,
-        FOREIGN KEY (product_id) REFERENCES products(id)
+        FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
       )
     `);
-    addColumnIfNotExists('inventory_batches', 'batch_number', 'TEXT');
-    addColumnIfNotExists('inventory_batches', 'invoice_number', 'TEXT');
 
-    db.run(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS inventory_transactions (
         id TEXT PRIMARY KEY,
         product_id TEXT NOT NULL,
@@ -355,27 +431,25 @@ function initDb() {
         price REAL,
         date TEXT NOT NULL,
         batch_id TEXT,
-        FOREIGN KEY (product_id) REFERENCES products(id)
+        FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
       )
     `);
 
-    // Required Products for Procurement Plan
-    db.run(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS required_products (
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         price REAL,
         quantity REAL NOT NULL,
-        unit TEXT NOT NULL, -- kg, litr, dona
+        unit TEXT NOT NULL,
         brand TEXT,
         category TEXT,
-        status TEXT DEFAULT 'PENDING', -- PENDING, ORDERED, RECEIVED
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        status TEXT DEFAULT 'PENDING',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
 
-    // Supply Orders
-    db.run(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS supply_orders (
         id TEXT PRIMARY KEY,
         order_id TEXT UNIQUE NOT NULL,
@@ -383,25 +457,53 @@ function initDb() {
         amount REAL NOT NULL,
         date TEXT NOT NULL,
         status TEXT NOT NULL,
-        items TEXT, -- JSON string
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        items TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
 
-    db.run(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS suppliers (
         id TEXT PRIMARY KEY,
         first_name TEXT,
         last_name TEXT,
         brand TEXT,
-        name TEXT, -- Full name or brand display name
+        name TEXT,
         type TEXT,
         score REAL,
         phone TEXT,
         contact_user TEXT,
         telegram_link TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
-  });
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS dishes (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        image TEXT,
+        kcal REAL,
+        iron REAL,
+        carbs REAL,
+        vitamins TEXT
+      )
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS kitchen_tasks (
+        id TEXT PRIMARY KEY,
+        menu_id TEXT UNIQUE NOT NULL,
+        status TEXT,
+        temperature REAL,
+        start_time TEXT,
+        end_time TEXT,
+        served_time TEXT
+      )
+    `);
+
+    console.log("PostgreSQL Database initialized successfully");
+  } catch (err) {
+    console.error("Error initializing PostgreSQL database:", err);
+  }
 }
