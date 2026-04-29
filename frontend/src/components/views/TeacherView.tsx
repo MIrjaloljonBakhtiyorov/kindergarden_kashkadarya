@@ -503,7 +503,7 @@ const TeacherMessagesView = ({ groupData }: { groupData: any }) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 z-50 flex items-center justify-center p-6"
+            className="absolute inset-0 z-50 flex items-center justify-center p-6 bg-black/5"
           >
             <motion.div 
               initial={{ scale: 0.9, y: 20 }}

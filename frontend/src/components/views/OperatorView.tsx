@@ -256,7 +256,7 @@ const OperatorView: React.FC<OperatorViewProps> = ({ groups: initialGroups, setG
       <OperationsLog />
 
       {viewMode !== 'DASHBOARD' && (
-        <div className="fixed inset-0 flex items-center justify-center z-[100] p-4 lg:p-12 animate-in fade-in duration-300">
+        <div className="fixed inset-0 flex items-center justify-center z-[100] p-4 lg:p-12 animate-in fade-in duration-300 bg-black/5">
            <div className="bg-slate-50 w-full max-w-6xl h-full max-h-[90vh] rounded-[40px] shadow-2xl relative overflow-hidden flex flex-col border border-white/20">
               <div className="absolute top-6 right-8 z-10">
                 <button 
