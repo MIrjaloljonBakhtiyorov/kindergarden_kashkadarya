@@ -1,0 +1,13 @@
+{
+  "name": "KinderCore Ops",
+  "description": "Premium Single-Preschool Operational Management Platform with Role-Based access.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "Dashboard",
+    "Inventory Management",
+    "Health Compliance",
+    "Parent Gateway"
+  ]
+}

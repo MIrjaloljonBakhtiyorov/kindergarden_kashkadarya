@@ -1,0 +1,34 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lexend:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-brand-primary: #2563EB;
+  --color-brand-primary-light: #EFF6FF;
+  --color-brand-depth: #1E293B;
+  --color-brand-emerald: #10B981;
+  --color-brand-amber: #F59E0B;
+  --color-brand-slate: #64748B;
+  --color-brand-ghost: #F8F9FB;
+  --color-brand-border: #E2E8F0;
+  
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-display: "Lexend", sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-brand-ghost text-brand-depth font-sans;
+  }
+}
+
+@layer utilities {
+  .custom-scrollbar::-webkit-scrollbar {
+    @apply w-1;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-slate-700 rounded-full;
+  }
+}
