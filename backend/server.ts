@@ -282,6 +282,8 @@ app.get("/api/health/allergies", (req, res) => {
 
 app.get("/api/attendance/today-stats", async (req, res) => {
   const today = new Date().toISOString().split('T')[0];
+  const { groupIds } = req.query;
+  
   try {
     const stats: any = {
       total: 0,
@@ -293,12 +295,21 @@ app.get("/api/attendance/today-stats", async (req, res) => {
       healthy: 0,
       age1_3: 0,
       age3_7: 0,
-      allergyCount: 0
+      allergyCount: 0,
+      late: 0
     };
 
     const fetchOne = (sql: string, params: any[] = []) => new Promise((resolve, reject) => {
       db.get(sql, params, (err, row) => err ? reject(err) : resolve(row));
     });
+
+    let groupFilter = "";
+    const params = [];
+    if (groupIds) {
+      const ids = (groupIds as string).split(',');
+      groupFilter = `WHERE group_id IN (${ids.map(() => '?').join(',')})`;
+      params.push(...ids);
+    }
 
     const counts: any = await fetchOne(`
       SELECT 
@@ -307,35 +318,52 @@ app.get("/api/attendance/today-stats", async (req, res) => {
         SUM(CASE WHEN age_category LIKE '%3-7%' THEN 1 ELSE 0 END) as age3_7,
         SUM(CASE WHEN is_allergic = 1 THEN 1 ELSE 0 END) as allergyCount
       FROM children
-    `);
+      ${groupFilter}
+    `, params);
     
     stats.total = counts?.total || 0;
     stats.age1_3 = counts?.age1_3 || 0;
     stats.age3_7 = counts?.age3_7 || 0;
     stats.allergyCount = counts?.allergyCount || 0;
 
+    let attendanceFilter = "WHERE date = ?";
+    const attendanceParams = [today];
+    if (groupIds) {
+      const ids = (groupIds as string).split(',');
+      attendanceFilter += ` AND child_id IN (SELECT id FROM children WHERE group_id IN (${ids.map(() => '?').join(',')}))`;
+      attendanceParams.push(...ids);
+    }
+
     const attendance: any = await fetchOne(`
       SELECT 
         SUM(CASE WHEN status = 'PRESENT' THEN 1 ELSE 0 END) as present,
         SUM(CASE WHEN status = 'ABSENT' THEN 1 ELSE 0 END) as absent,
         SUM(CASE WHEN status = 'SICK' THEN 1 ELSE 0 END) as sick_attendance,
-        SUM(CASE WHEN status = 'PRESENT' AND (arrival_time > '09:00:00' OR arrival_time LIKE '09:%' AND arrival_time > '09:00:00') THEN 1 ELSE 0 END) as late
+        SUM(CASE WHEN status = 'PRESENT' AND (arrival_time > '09:00:00') THEN 1 ELSE 0 END) as late
       FROM attendance
-      WHERE date = ?
-    `, [today]);
+      ${attendanceFilter}
+    `, attendanceParams);
 
     stats.present = attendance?.present || 0;
     stats.absent = attendance?.absent || 0;
     stats.late = attendance?.late || 0;
     const sickAttendance = attendance?.sick_attendance || 0;
 
+    let healthFilter = "WHERE date = ?";
+    const healthParams = [today];
+    if (groupIds) {
+      const ids = (groupIds as string).split(',');
+      healthFilter += ` AND child_id IN (SELECT id FROM children WHERE group_id IN (${ids.map(() => '?').join(',')}))`;
+      healthParams.push(...ids);
+    }
+
     const health: any = await fetchOne(`
       SELECT 
         COUNT(*) as checked,
         SUM(CASE WHEN is_sick = 1 THEN 1 ELSE 0 END) as sick_health
       FROM health_checks
-      WHERE date = ?
-    `, [today]);
+      ${healthFilter}
+    `, healthParams);
 
     const approvedMenus: any = await fetchOne(`
       SELECT COUNT(*) as count FROM menus WHERE date = ? AND is_approved = 1
@@ -459,10 +487,13 @@ app.delete("/api/parents/:id", (req, res) => {
 // Attendance API
 app.get("/api/attendance/:groupId/:date", (req, res) => {
   const { groupId, date } = req.params;
-  db.all('SELECT child_id, status FROM attendance WHERE child_id IN (SELECT id FROM children WHERE group_id = ?) AND date = ?', [groupId, date], (err, rows) => {
+  db.all('SELECT child_id, status, arrival_time FROM attendance WHERE child_id IN (SELECT id FROM children WHERE group_id = ?) AND date = ?', [groupId, date], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     const attendanceMap = rows.reduce((acc: any, row: any) => {
-      acc[row.child_id] = row.status.toLowerCase();
+      acc[row.child_id] = {
+        status: row.status.toLowerCase(),
+        arrival_time: row.arrival_time
+      };
       return acc;
     }, {});
     res.json(attendanceMap);
