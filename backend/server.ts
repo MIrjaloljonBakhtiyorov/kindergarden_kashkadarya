@@ -511,34 +511,34 @@ app.post("/api/attendance", (req, res) => {
   if (childIds.length === 0) return res.json({ success: true });
 
   childIds.forEach(childId => {
-    const status = attendance_data[childId].toUpperCase();
+    const data = attendance_data[childId];
+    // Support both simple string status or object with status and arrival_time
+    const status = (typeof data === 'string' ? data : data.status).toUpperCase();
+    const explicitArrivalTime = typeof data === 'object' ? data.arrival_time : null;
+
     const currentTime = new Date().toLocaleTimeString('en-GB', { hour12: false });
+    const finalArrivalTime = status === 'PRESENT' ? (explicitArrivalTime || currentTime) : null;
 
     db.run(`
       INSERT INTO attendance (id, child_id, date, status, reason, arrival_time)
       VALUES (?, ?, ?, ?, ?, ?)
-      ON CONFLICT(child_id, date) DO UPDATE SET 
-        status = excluded.status, 
+      ON CONFLICT(child_id, date) DO UPDATE SET
+        status = excluded.status,
         reason = excluded.reason,
-        arrival_time = CASE 
-          WHEN excluded.status = 'PRESENT' AND (arrival_time IS NULL OR arrival_time = '') THEN ?
-          WHEN excluded.status != 'PRESENT' THEN NULL
-          ELSE arrival_time 
-        END
-    `, [crypto.randomUUID(), childId, isoDate, status, reason || '', status === 'PRESENT' ? currentTime : null, currentTime], function(err) {
+        arrival_time = excluded.arrival_time
+    `, [crypto.randomUUID(), childId, isoDate, status, reason || '', finalArrivalTime], function(err) {
       if (err && !hasError) {
         hasError = true;
         return res.status(500).json({ error: err.message });
       }
       completed++;
       if (completed === childIds.length && !hasError) {
-        logOperation('ATTENDANCE', 'SAVE', isoDate, `${childIds.length} ta bola uchun davomat/reja saqlandi`);
+        logOperation('ATTENDANCE', 'SAVE', isoDate, `${childIds.length} ta bola uchun davomat saqlandi`);
         res.json({ success: true });
       }
     });
   });
 });
-
 app.post("/api/menus/approve-today", (req, res) => {
   const today = new Date().toISOString().split('T')[0];
   db.run('UPDATE menus SET is_approved = 1 WHERE date = ?', [today], function(err) {

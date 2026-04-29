@@ -10,6 +10,7 @@ import {
   Calendar,
   Users,
   Utensils,
+  Clock,
   History as HistoryIcon,
   MessageCircle,
   Send,
@@ -33,7 +34,7 @@ interface TeacherViewProps {
   groups: Group[];
 }
 
-type AttendanceStatus = 'present' | 'absent' | 'sick';
+type AttendanceStatus = 'early' | 'late' | 'absent';
 
 const API_BASE_URL = 'http://localhost:3001/api';
 
@@ -556,7 +557,7 @@ const GroupAttendanceView = ({ groupData, onSaved }: { groupData: any, onSaved: 
   const { showNotification } = useNotification();
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [attendance, setAttendance] = useState<Record<string, { status: AttendanceStatus, arrival_time?: string | null }>>({});
+  const [attendance, setAttendance] = useState<Record<string, { status: AttendanceStatus | null, arrival_time?: string | null }>>({});
 
   useEffect(() => {
     const fetchExistingAttendance = async () => {
@@ -567,8 +568,16 @@ const GroupAttendanceView = ({ groupData, onSaved }: { groupData: any, onSaved: 
         
         const initialAttendance = (groupData.children || []).reduce((acc: any, child: any) => {
           const existing = res.data[child.id];
+          let status: AttendanceStatus | null = null;
+          
+          if (existing?.status === 'present') {
+            status = existing.arrival_time && existing.arrival_time <= '09:00:00' ? 'early' : 'late';
+          } else if (existing?.status === 'absent' || existing?.status === 'sick') {
+            status = 'absent';
+          }
+
           acc[child.id] = {
-            status: existing?.status || 'present',
+            status: status,
             arrival_time: existing?.arrival_time || null
           };
           return acc;
@@ -587,44 +596,53 @@ const GroupAttendanceView = ({ groupData, onSaved }: { groupData: any, onSaved: 
 
   const stats = useMemo(() => {
     const items = Object.values(attendance);
-    const present = items.filter(v => v.status === 'present');
-    const late = present.filter(v => {
-      if (!v.arrival_time) return false;
-      return v.arrival_time > '09:00:00';
-    });
+    const early = items.filter(v => v.status === 'early').length;
+    const late = items.filter(v => v.status === 'late').length;
+    const absent = items.filter(v => v.status === 'absent').length;
 
     return {
       total: (groupData.children || []).length,
-      present: present.length,
-      early: present.length - late.length,
-      late: late.length,
-      notArrived: items.filter(v => v.status === 'absent' || v.status === 'sick').length
+      early,
+      late,
+      absent,
+      present: early + late
     };
   }, [attendance, groupData.children]);
 
   const handleStatusChange = (childId: string, status: AttendanceStatus) => {
     setAttendance(prev => {
-      const current = prev[childId];
-      let newArrivalTime = current?.arrival_time;
+      let arrivalTime = null;
+      const now = new Date().toLocaleTimeString('en-GB', { hour12: false });
       
-      if (status === 'present' && !newArrivalTime) {
-        newArrivalTime = new Date().toLocaleTimeString('en-GB', { hour12: false });
-      } else if (status !== 'present') {
-        newArrivalTime = null;
+      if (status === 'early') {
+        arrivalTime = now <= '09:00:00' ? now : '08:59:00';
+      } else if (status === 'late') {
+        arrivalTime = now > '09:00:00' ? now : '09:01:00';
       }
 
       return { 
         ...prev, 
-        [childId]: { status, arrival_time: newArrivalTime } 
+        [childId]: { status, arrival_time: arrivalTime } 
       };
     });
   };
 
   const handleSave = async () => {
+    // Check if all children have a status selected
+    const unselectedCount = (groupData.children || []).filter((c: any) => !attendance[c.id]?.status).length;
+    if (unselectedCount > 0) {
+      showNotification(`${unselectedCount} ta bolaga status tanlanmagan!`, 'error');
+      return;
+    }
+
     setIsSaving(true);
     try {
       const attendanceData = Object.keys(attendance).reduce((acc: any, id) => {
-        acc[id] = attendance[id].status;
+        const item = attendance[id];
+        acc[id] = {
+          status: item.status === 'absent' ? 'ABSENT' : 'PRESENT',
+          arrival_time: item.arrival_time
+        };
         return acc;
       }, {});
 
@@ -673,15 +691,15 @@ const GroupAttendanceView = ({ groupData, onSaved }: { groupData: any, onSaved: 
           <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center mb-4">
             <CheckCircle2 size={20} />
           </div>
-          <p className="text-[9px] font-black text-emerald-600 uppercase tracking-[0.2em] mb-1">9 gacha kelganlar</p>
+          <p className="text-[9px] font-black text-emerald-600 uppercase tracking-[0.2em] mb-1">9 gacha keldi</p>
           <p className="text-2xl font-black text-emerald-600">{stats.early}</p>
         </div>
 
         <div className="bg-amber-50/50 p-6 rounded-[2rem] border border-amber-100 flex flex-col items-center text-center">
           <div className="w-10 h-10 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center mb-4">
-            <AlertCircle size={20} />
+            <Clock size={20} />
           </div>
-          <p className="text-[9px] font-black text-amber-600 uppercase tracking-[0.2em] mb-1">9 dan keyin kelganlar</p>
+          <p className="text-[9px] font-black text-amber-600 uppercase tracking-[0.2em] mb-1">9 dan keyin keladi</p>
           <p className="text-2xl font-black text-amber-600">{stats.late}</p>
         </div>
 
@@ -689,8 +707,8 @@ const GroupAttendanceView = ({ groupData, onSaved }: { groupData: any, onSaved: 
           <div className="w-10 h-10 bg-rose-100 text-rose-500 rounded-xl flex items-center justify-center mb-4">
             <XCircle size={20} />
           </div>
-          <p className="text-[9px] font-black text-rose-500 uppercase tracking-[0.2em] mb-1">Umuman kelmaganlar</p>
-          <p className="text-2xl font-black text-rose-500">{stats.notArrived}</p>
+          <p className="text-[9px] font-black text-rose-500 uppercase tracking-[0.2em] mb-1">Umuman kelmaydi</p>
+          <p className="text-2xl font-black text-rose-500">{stats.absent}</p>
         </div>
 
         <div className="bg-indigo-50/50 p-6 rounded-[2rem] border border-indigo-100 flex flex-col items-center text-center">
@@ -714,45 +732,49 @@ const GroupAttendanceView = ({ groupData, onSaved }: { groupData: any, onSaved: 
             <div className="p-20 text-center text-brand-muted font-bold italic">Guruhda bolalar yo'q</div>
           ) : (
             groupData.children.map((child: any) => (
-              <div key={child.id} className="p-6 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
+              <div key={child.id} className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between hover:bg-slate-50/50 transition-colors gap-4">
                 <div>
                   <span className="font-bold text-brand-depth">{child.first_name || child.name} {child.last_name || ''}</span>
-                  {attendance[child.id]?.arrival_time && (
-                    <p className="text-[9px] text-brand-muted font-bold mt-1">
-                      Kelgan vaqti: {attendance[child.id].arrival_time}
-                    </p>
-                  )}
+                  <p className="text-[9px] text-brand-muted font-bold mt-1 uppercase tracking-tight">
+                    Status: {
+                      attendance[child.id]?.status === 'early' ? '9 gacha keldi' : 
+                      attendance[child.id]?.status === 'late' ? '9 dan keyin keladi' : 
+                      attendance[child.id]?.status === 'absent' ? 'Umuman kelmaydi' : 
+                      'Tanlanmagan'
+                    }
+                    {attendance[child.id]?.arrival_time && ` • ${attendance[child.id].arrival_time}`}
+                  </p>
                 </div>
-                <div className="flex gap-2">
+                <div className="grid grid-cols-1 sm:flex gap-2 w-full sm:w-auto">
                   <button 
-                    onClick={() => handleStatusChange(child.id, 'present')}
-                    className={`w-28 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${
-                      attendance[child.id]?.status === 'present' 
+                    onClick={() => handleStatusChange(child.id, 'early')}
+                    className={`px-4 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${
+                      attendance[child.id]?.status === 'early' 
                         ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' 
                         : 'bg-slate-50 text-brand-muted border border-brand-border hover:bg-white'
                     }`}
                   >
-                    <CheckCircle2 size={14} /> Keldi
+                    <CheckCircle2 size={14} /> 9 gacha keldi
+                  </button>
+                  <button 
+                    onClick={() => handleStatusChange(child.id, 'late')}
+                    className={`px-4 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${
+                      attendance[child.id]?.status === 'late' 
+                        ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20' 
+                        : 'bg-slate-50 text-brand-muted border border-brand-border hover:bg-white'
+                    }`}
+                  >
+                    <Clock size={14} /> 9 dan keyin keladi
                   </button>
                   <button 
                     onClick={() => handleStatusChange(child.id, 'absent')}
-                    className={`w-28 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${
+                    className={`px-4 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${
                       attendance[child.id]?.status === 'absent' 
                         ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/20' 
                         : 'bg-slate-50 text-brand-muted border border-brand-border hover:bg-white'
                     }`}
                   >
-                    <XCircle size={14} /> Kelmadi
-                  </button>
-                  <button 
-                    onClick={() => handleStatusChange(child.id, 'sick')}
-                    className={`w-28 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${
-                      attendance[child.id]?.status === 'sick' 
-                        ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20' 
-                        : 'bg-slate-50 text-brand-muted border border-brand-border hover:bg-white'
-                    }`}
-                  >
-                    <Thermometer size={14} /> Kasal
+                    <XCircle size={14} /> Umuman kelmaydi
                   </button>
                 </div>
               </div>
