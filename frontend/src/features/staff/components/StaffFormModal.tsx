@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { staffFormSchema, StaffFormValues } from '../schemas/staffForm.schema';
-import { UserCircle, Smartphone, ArrowRight, FileText, GraduationCap, Briefcase, Calendar, Upload } from 'lucide-react';
+import { UserCircle, Smartphone, ArrowRight, FileText, GraduationCap, Briefcase, Calendar, Upload, CheckCircle2 } from 'lucide-react';
 import { useStaff } from '../hooks/useStaff';
 import { useGroups } from '../../groups/hooks/useGroups';
 import { useNotification } from '../../../context/NotificationContext';
@@ -12,12 +12,27 @@ interface Props {
   onClose: () => void;
 }
 
+const POSITIONS = [
+  { value: 'admin', label: 'Admin' },
+  { value: 'direktor', label: 'Direktor' },
+  { value: 'taminotchi', label: 'Ta’minotchi' },
+  { value: 'buxgalter', label: 'Buxgalter' },
+  { value: 'hamshira', label: 'Hamshira' },
+  { value: 'omborchi', label: 'Omborchi' },
+  { value: 'mudir', label: 'Mudir' },
+  { value: 'tarbiyachi', label: 'Tarbiyachi' },
+  { value: 'other', label: 'Boshqa...' }
+];
+
 export const StaffFormModal: React.FC<Props> = ({ staffMember, onClose }) => {
   const { createStaff, updateStaff } = useStaff();
   const { groups } = useGroups();
   const { showNotification } = useNotification();
+  const [isPassportUploaded, setIsPassportUploaded] = useState(false);
+  const [selectedPosition, setSelectedPosition] = useState(staffMember?.position || '');
+  const [customPosition, setCustomPosition] = useState('');
 
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<StaffFormValues>({
+  const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm<StaffFormValues>({
     resolver: zodResolver(staffFormSchema),
     defaultValues: (staffMember ? {
       full_name: staffMember.full_name,
@@ -43,12 +58,40 @@ export const StaffFormModal: React.FC<Props> = ({ staffMember, onClose }) => {
     }) as StaffFormValues
   });
 
+  const positionValue = watch('position');
+  const isTeacher = positionValue === 'tarbiyachi';
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setIsPassportUploaded(true);
+      showNotification('Passport muvaffaqiyatli yuklandi!', 'success');
+    }
+  };
+
+  const handlePositionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const val = e.target.value;
+    setSelectedPosition(val);
+    if (val !== 'other') {
+      setValue('position', val);
+      if (val !== 'tarbiyachi') {
+        setValue('group_id', '');
+      }
+    } else {
+      setValue('position', '');
+    }
+  };
+
   const onSubmit = async (data: StaffFormValues) => {
     try {
+      const finalData = { ...data };
+      if (selectedPosition === 'other') {
+        finalData.position = customPosition;
+      }
+      
       if (staffMember) {
-        await updateStaff(staffMember.id, data);
+        await updateStaff(staffMember.id, finalData);
       } else {
-        await createStaff(data);
+        await createStaff(finalData);
       }
       showNotification('Muvaffaqiyatli saqlandi!', 'success');
       onClose();
@@ -81,11 +124,33 @@ export const StaffFormModal: React.FC<Props> = ({ staffMember, onClose }) => {
               <input {...register('full_name')} className="w-full bg-slate-50 border border-brand-border rounded-xl py-3 px-4 focus:ring-2 focus:ring-brand-primary/10 outline-none" />
               {errors.full_name && <p className="text-red-500 text-xs">{errors.full_name.message}</p>}
             </div>
+            
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold text-brand-muted uppercase ml-1">Lavozimi *</label>
-              <input {...register('position')} className="w-full bg-slate-50 border border-brand-border rounded-xl py-3 px-4 focus:ring-2 focus:ring-brand-primary/10 outline-none" />
+              <div className="flex flex-col gap-2">
+                <select 
+                  value={POSITIONS.some(p => p.value === selectedPosition) ? selectedPosition : (selectedPosition ? 'other' : '')}
+                  onChange={handlePositionChange}
+                  className="w-full bg-slate-50 border border-brand-border rounded-xl py-3 px-4 focus:ring-2 focus:ring-brand-primary/10 outline-none appearance-none"
+                >
+                  <option value="">Tanlang...</option>
+                  {POSITIONS.map(p => (
+                    <option key={p.value} value={p.value}>{p.label}</option>
+                  ))}
+                </select>
+                {selectedPosition === 'other' && (
+                  <input 
+                    type="text"
+                    value={customPosition}
+                    onChange={(e) => setCustomPosition(e.target.value)}
+                    placeholder="Lavozimni kiriting..."
+                    className="w-full bg-slate-50 border border-brand-border rounded-xl py-3 px-4 focus:ring-2 focus:ring-brand-primary/10 outline-none animate-in slide-in-from-top-2"
+                  />
+                )}
+              </div>
               {errors.position && <p className="text-red-500 text-xs">{errors.position.message}</p>}
             </div>
+
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold text-brand-muted uppercase ml-1">Tug'ilgan sana *</label>
               <div className="relative">
@@ -113,17 +178,32 @@ export const StaffFormModal: React.FC<Props> = ({ staffMember, onClose }) => {
                 <input 
                   type="file"
                   accept=".pdf"
-                  {...register('passport_pdf')}
+                  onChange={handleFileChange}
                   className="hidden"
                   id="passport-upload"
                 />
                 <label 
                   htmlFor="passport-upload"
-                  className="w-full bg-slate-50 border-2 border-dashed border-brand-border rounded-xl py-2.5 px-4 flex items-center justify-center gap-2 cursor-pointer hover:bg-brand-primary/5 hover:border-brand-primary transition-all text-sm font-bold text-brand-slate"
+                  className={`w-full rounded-xl py-2.5 px-4 flex items-center justify-center gap-2 cursor-pointer transition-all text-sm font-bold ${isPassportUploaded ? 'bg-emerald-50 border-2 border-emerald-500 text-emerald-600' : 'bg-slate-50 border-2 border-dashed border-brand-border text-brand-slate hover:bg-brand-primary/5 hover:border-brand-primary'}`}
                 >
-                  <Upload size={16} /> PDF Faylni tanlang
+                  {isPassportUploaded ? (
+                    <><CheckCircle2 size={16} /> Passport yuklangan</>
+                  ) : (
+                    <><Upload size={16} /> PDF Faylni tanlang</>
+                  )}
                 </label>
               </div>
+              {isPassportUploaded && (
+                <div className="mt-3 p-4 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                    <CheckCircle2 size={20} />
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-black text-emerald-800 uppercase tracking-wider leading-none">Muvaffaqiyatli yuklandi!</p>
+                    <p className="text-[10px] font-bold text-emerald-600/80 mt-1">Passport ma'lumotlari tizimga biriktirildi</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -166,10 +246,14 @@ export const StaffFormModal: React.FC<Props> = ({ staffMember, onClose }) => {
               <input {...register('phone')} className="w-full bg-slate-50 border border-brand-border rounded-xl py-3 px-4 outline-none" placeholder="+998 90 123 45 67" />
               {errors.phone && <p className="text-red-500 text-xs">{errors.phone.message}</p>}
             </div>
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-brand-muted uppercase ml-1">Guruhi</label>
-              <select {...register('group_id')} className="w-full bg-slate-50 border border-brand-border rounded-xl py-3 px-4 focus:ring-2 focus:ring-brand-primary/10 outline-none appearance-none">
-                <option value="">Guruhni tanlang (ixtiyoriy)</option>
+            <div className={`space-y-1.5 transition-all duration-500 ${isTeacher ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
+              <label className="text-[10px] font-bold text-brand-muted uppercase ml-1">Guruhi {!isTeacher && '(Faqat tarbiyachilar uchun)'}</label>
+              <select 
+                {...register('group_id')} 
+                disabled={!isTeacher}
+                className="w-full bg-slate-50 border border-brand-border rounded-xl py-3 px-4 focus:ring-2 focus:ring-brand-primary/10 outline-none appearance-none disabled:cursor-not-allowed"
+              >
+                <option value="">Guruhni tanlang...</option>
                 {groups.map(g => (
                   <option key={g.id} value={g.id}>{g.name}</option>
                 ))}
@@ -181,7 +265,7 @@ export const StaffFormModal: React.FC<Props> = ({ staffMember, onClose }) => {
         <div className="flex flex-col sm:flex-row items-center justify-end gap-4 pt-6 border-t border-brand-border">
           <button type="button" onClick={onClose} className="w-full sm:w-auto px-6 py-3 rounded-xl border border-brand-border text-brand-slate font-bold hover:bg-slate-50 transition-colors">Bekor qilish</button>
           <button type="submit" disabled={isSubmitting} className="w-full sm:w-auto px-10 py-3 rounded-xl bg-brand-primary text-white font-bold shadow-lg shadow-brand-primary/20 hover:bg-brand-primary/90 transition-all flex items-center justify-center gap-2">
-            {staffMember ? 'Saqlash' : 'Kiritish'} <ArrowRight size={18} />
+            Ma'lumotlarni saqlash <ArrowRight size={18} />
           </button>
         </div>
       </form>

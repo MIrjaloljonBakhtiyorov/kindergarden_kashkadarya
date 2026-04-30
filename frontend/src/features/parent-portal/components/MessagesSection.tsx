@@ -123,7 +123,7 @@ export const MessagesSection = () => {
       {/* Contact List */}
       <div className={`${activeChat && 'hidden md:flex'} w-full md:w-80 flex-col gap-4 transition-all duration-500`}>
         <div className="bg-white p-4 md:p-6 rounded-[2rem] md:rounded-[2.5rem] border border-brand-border shadow-sm space-y-3">
-            <p className="text-[9px] md:text-[10px] font-black text-brand-muted uppercase tracking-[0.3em] px-2">Kontaktlar</p>
+            <p className="text-[9px] md:text-[10px] font-black text-brand-muted uppercase tracking-[0.3em] px-2">Tarbiyachi</p>
             <div className="space-y-2">
             {contacts.map((contact) => (
                 <button 
@@ -168,7 +168,7 @@ export const MessagesSection = () => {
                 <MessageCircle size={48} className="text-slate-300" />
               </div>
               <h4 className="text-xl md:text-2xl font-black text-brand-depth">Xabar yuborish</h4>
-              <p className="text-sm md:text-base text-brand-muted mt-2 max-w-xs">Suhbatni boshlash uchun chap tarafdagi kontaktlardan birini tanlang.</p>
+              <p className="text-sm md:text-base text-brand-muted mt-2 max-w-xs">Suhbatni boshlash uchun chap tarafdan tarbiyachini tanlang.</p>
             </motion.div>
           ) : (
             <motion.div key="chat-window" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1 flex flex-col h-full">

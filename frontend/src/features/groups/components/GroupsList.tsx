@@ -3,11 +3,13 @@ import { useGroups } from '../hooks/useGroups';
 import { GroupFormModal } from './GroupFormModal';
 import { Group } from '../types/group.types';
 import { Pencil, Trash2 } from 'lucide-react';
+import { useNotification } from '../../../context/NotificationContext';
 
 export const GroupsList: React.FC = () => {
   const { groups, loading, createGroup, updateGroup, deleteGroup } = useGroups();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<Group | undefined>(undefined);
+  const { showNotification, confirm } = useNotification();
 
   if (loading) return <div className="p-8 text-center text-brand-muted font-bold">Yuklanmoqda...</div>;
 
@@ -19,6 +21,22 @@ export const GroupsList: React.FC = () => {
   const handleEdit = (group: Group) => {
     setSelectedGroup(group);
     setIsModalOpen(true);
+  };
+
+  const handleDelete = async (group: Group) => {
+    const childrenCount = (group as any).children?.length || 0;
+    if (childrenCount > 0) {
+      showNotification(
+        `Siz guruhni uchira olmaysiz! Guruhda ${childrenCount} ta bola malumotlari shakllangan. Guruhni uchirsangiz bolaning malumotlari uchib ketish xavfi bor.`, 
+        'error'
+      );
+      return;
+    }
+
+    const ok = await confirm('Ushbu guruhni o\'chirishni xohlaysizmi?');
+    if (ok) {
+      await deleteGroup(group.id);
+    }
   };
 
   return (
@@ -51,7 +69,7 @@ export const GroupsList: React.FC = () => {
                      <Pencil size={18} />
                    </button>
                    <button 
-                     onClick={() => deleteGroup(group.id)} 
+                     onClick={() => handleDelete(group)} 
                      title="O‘chirish"
                      className="w-10 h-10 flex items-center justify-center text-rose-500 bg-rose-50 rounded-2xl hover:bg-rose-500 hover:text-white transition-all active:scale-90"
                    >

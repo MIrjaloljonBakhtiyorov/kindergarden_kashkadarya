@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   LayoutDashboard, 
   Users, 
@@ -12,10 +12,16 @@ import {
   Truck,
   Coins,
   LogOut,
-  X
+  X,
+  Contact,
+  Stethoscope,
+  Camera,
+  Loader2
 } from 'lucide-react';
 import { UserRole, NavItem } from '../../types';
 import { useAuth } from '../../context/AuthContext';
+import apiClient from '../../api/apiClient';
+import { useNotification } from '../../context/NotificationContext';
 
 interface SidebarProps {
   activeRole: UserRole;
@@ -25,12 +31,71 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ activeRole, onRoleChange, onClose }) => {
   const { user, logout } = useAuth();
+  const { showNotification } = useNotification();
+  const [kgName, setKgName] = useState('KinderFlow');
+  const [kgLogo, setKgLogo] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  const fetchSettings = async () => {
+    try {
+      const res = await apiClient.get('/settings');
+      if (res.data.kg_name) setKgName(res.data.kg_name);
+      if (res.data.kg_logo) setKgLogo(res.data.kg_logo);
+    } catch (err) {
+      console.error('Failed to fetch settings:', err);
+    }
+  };
+
+  const handleNameSave = async (newName: string) => {
+    setKgName(newName);
+    setIsEditing(false);
+    try {
+      await apiClient.post('/settings', { kg_name: newName });
+      showNotification('Bog‘cha nomi yangilandi', 'success');
+    } catch (err) {
+      showNotification('Xatolik yuz berdi', 'error');
+    }
+  };
+
+  const handleLogoClick = () => {
+    if (user?.role === 'DIRECTOR' || user?.role === 'ADMIN') {
+      fileInputRef.current?.click();
+    }
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+      const uploadRes = await apiClient.post('/upload', formData);
+      const logoUrl = uploadRes.data.url;
+      
+      await apiClient.post('/settings', { kg_logo: logoUrl });
+      setKgLogo(logoUrl);
+      showNotification('Logo yuklandi!', 'success');
+    } catch (err) {
+      showNotification('Logo yuklashda xatolik', 'error');
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const allMenuItems: NavItem[] = [
     { id: 'DIRECTOR', label: 'Boshqaruv (Direktor)', icon: LayoutDashboard },
-    { id: 'OPERATOR', label: 'Operator', icon: Users },
+    { id: 'OPERATOR', label: 'Operator', icon: Contact },
     { id: 'TEACHER', label: 'Tarbiyachi', icon: ClipboardCheck },
-    { id: 'NURSE', label: 'Hamshira', icon: Users },
+    { id: 'NURSE', label: 'Hamshira', icon: Stethoscope },
     { id: 'CHEF', label: 'Oshpaz', icon: ChefHat },
     { id: 'STOREKEEPER', label: 'Omborchi', icon: Package },
     { id: 'INSPECTOR', label: 'Nazorat / Inspektor', icon: ShieldCheck },
@@ -58,11 +123,48 @@ const Sidebar: React.FC<SidebarProps> = ({ activeRole, onRoleChange, onClose }) 
 
       <div className="p-8 border-b border-brand-border shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-brand-primary rounded-xl flex items-center justify-center shadow-lg shadow-brand-primary/20">
-            <span className="text-white font-sans font-bold text-xl uppercase tracking-tighter">K</span>
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={handleFileChange} 
+            className="hidden" 
+            accept="image/*"
+          />
+          <div 
+            onClick={handleLogoClick}
+            className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-lg shrink-0 relative overflow-hidden group/logo ${isUploading ? 'bg-slate-100' : 'bg-brand-primary cursor-pointer hover:shadow-brand-primary/40 transition-all'}`}
+          >
+            {isUploading ? (
+              <Loader2 size={20} className="animate-spin text-brand-primary" />
+            ) : kgLogo ? (
+              <img src={kgLogo} alt="Logo" className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-white font-sans font-bold text-xl uppercase tracking-tighter">{kgName[0]}</span>
+            )}
+            {(user?.role === 'DIRECTOR' || user?.role === 'ADMIN') && !isUploading && (
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/logo:opacity-100 transition-opacity">
+                <Camera size={16} className="text-white" />
+              </div>
+            )}
           </div>
-          <div>
-            <h1 className="text-brand-primary font-sans font-bold text-lg leading-tight uppercase tracking-tight">KinderFlow</h1>
+          <div className="flex-1 min-w-0">
+            {isEditing ? (
+              <input
+                autoFocus
+                className="w-full bg-slate-50 border-none outline-none font-bold text-brand-primary text-sm p-1 rounded"
+                value={kgName}
+                onChange={(e) => setKgName(e.target.value)}
+                onBlur={() => handleNameSave(kgName)}
+                onKeyDown={(e) => e.key === 'Enter' && handleNameSave(kgName)}
+              />
+            ) : (
+              <h1 
+                onClick={() => (user?.role === 'DIRECTOR' || user?.role === 'ADMIN') && setIsEditing(true)}
+                className={`text-brand-primary font-sans font-bold text-lg leading-tight uppercase tracking-tight truncate ${user?.role === 'DIRECTOR' || user?.role === 'ADMIN' ? 'cursor-pointer hover:opacity-70' : ''}`}
+              >
+                {kgName}
+              </h1>
+            )}
             <p className="text-brand-muted text-[10px] uppercase tracking-widest font-bold">Qashqadaryo MTM Tizimi</p>
           </div>
         </div>

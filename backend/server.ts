@@ -114,53 +114,51 @@ app.put("/api/parent-portal/profile/:childId", async (req, res) => {
   const { childId } = req.params;
   const { address, photo_url, father, mother } = req.body;
 
-  db.serialize(() => {
-    db.run("BEGIN TRANSACTION");
-
-    // 1. Update child address and photo_url
-    db.run('UPDATE children SET address = ?, photo_url = ? WHERE id = ?', [address, photo_url, childId], function(err) {
-      if (err) {
-        db.run("ROLLBACK");
-        return res.status(500).json({ error: err.message });
-      }
-    });
-
-    // 2. Get father and mother IDs
-    db.get('SELECT first_name, last_name, father_id, mother_id FROM children WHERE id = ?', [childId], (err, child: any) => {
-      if (err || !child) {
-        db.run("ROLLBACK");
-        return res.status(500).json({ error: err?.message || "Bola topilmadi" });
-      }
-
-      // 3. Update father data
-      db.run('UPDATE parents SET workplace = ?, phone = ?, passport_no = ? WHERE id = ?', 
-        [father.workplace, father.phone, father.passport_no, child.father_id], (err) => {
-          if (err) {
-            db.run("ROLLBACK");
-            return res.status(500).json({ error: err.message });
-          }
-        }
-      );
-
-      // 4. Update mother data
-      db.run('UPDATE parents SET workplace = ?, phone = ?, passport_no = ? WHERE id = ?', 
-        [mother.workplace, mother.phone, mother.passport_no, child.mother_id], (err) => {
-          if (err) {
-            db.run("ROLLBACK");
-            return res.status(500).json({ error: err.message });
-          }
-          
-          db.run("COMMIT", (err) => {
-            if (err) res.status(500).json({ error: err.message });
-            else {
-              logOperation('UPDATE', 'PROFILE', `${child.first_name} ${child.last_name}`, 'Profil ma\'lumotlari yangilandi');
-              res.json({ success: true });
-            }
-          });
-        }
-      );
-    });
+  const runQuery = (sql: string, params: any[] = []) => new Promise<void>((resolve, reject) => {
+    db.run(sql, params, (err) => err ? reject(err) : resolve());
   });
+
+  const getQuery = (sql: string, params: any[] = []) => new Promise<any>((resolve, reject) => {
+    db.get(sql, params, (err, row) => err ? reject(err) : resolve(row));
+  });
+
+  try {
+    await runQuery("BEGIN TRANSACTION");
+
+    // 1. Update child
+    await runQuery('UPDATE children SET address = ?, photo_url = ? WHERE id = ?', [address, photo_url, childId]);
+
+    // 2. Get child and parent IDs
+    const child = await getQuery('SELECT first_name, last_name, father_id, mother_id, parent_account_id, group_id FROM children WHERE id = ?', [childId]);
+    if (!child) throw new Error("Bola topilmadi");
+
+    // 3. Update parents
+    await runQuery('UPDATE parents SET workplace = ?, phone = ?, passport_no = ? WHERE id = ?', 
+      [father.workplace, father.phone, father.passport_no, child.father_id]);
+    await runQuery('UPDATE parents SET workplace = ?, phone = ?, passport_no = ? WHERE id = ?', 
+      [mother.workplace, mother.phone, mother.passport_no, child.mother_id]);
+
+    await runQuery("COMMIT");
+
+    logOperation('UPDATE', 'PROFILE', `${child.first_name} ${child.last_name}`, 'Profil ma\'lumotlari yangilandi');
+
+    // 4. Send automated notification to teacher (Async, don't wait for response)
+    if (child.group_id && child.parent_account_id) {
+      db.get("SELECT user_id FROM staff WHERE group_id = ? AND position = 'tarbiyachi' LIMIT 1", [child.group_id], (err, staff: any) => {
+        if (staff && staff.user_id) {
+          const msg = `Avtomatik bildirishnoma: ${child.first_name} ${child.last_name}ning profil ma'lumotlari yangilandi.`;
+          db.run("INSERT INTO messages (sender_id, receiver_id, text, sender_role) VALUES (?, ?, ?, 'parent')", 
+            [child.parent_account_id, staff.user_id, msg]);
+        }
+      });
+    }
+
+    res.json({ success: true });
+  } catch (err: any) {
+    db.run("ROLLBACK");
+    console.error("Profile update error:", err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.get("/api/parent-portal/full-data/:childId", async (req, res) => {
@@ -555,8 +553,28 @@ app.post("/api/attendance", (req, res) => {
       completed++;
       if (completed === childIds.length && !hasError) {
         logOperation('ATTENDANCE', 'SAVE', isoDate, `${childIds.length} ta bola uchun davomat saqlandi`);
+
+        // If called from parent portal (only 1 child), send notification to teacher
+        if (childIds.length === 1) {
+          const childId = childIds[0];
+          const status = (typeof attendance_data[childId] === 'string' ? attendance_data[childId] : attendance_data[childId].status).toUpperCase();
+          if (status === 'ABSENT') {
+            db.get("SELECT first_name, last_name, parent_account_id, group_id FROM children WHERE id = ?", [childId], (err, child: any) => {
+              if (child && child.parent_account_id && child.group_id) {
+                db.get("SELECT user_id FROM staff WHERE group_id = ? AND position = 'tarbiyachi' LIMIT 1", [child.group_id], (err, staff: any) => {
+                   if (staff && staff.user_id) {
+                     const msg = `Avtomatik bildirishnoma: ${child.first_name} ${child.last_name} ${isoDate} kuni bog'chaga bormaydi. Sabab: ${reason || 'Ko\'rsatilmadi'}`;
+                     db.run("INSERT INTO messages (sender_id, receiver_id, text, sender_role) VALUES (?, ?, ?, 'parent')", [child.parent_account_id, staff.user_id, msg]);
+                   }
+                });
+              }
+            });
+          }
+        }
+
         res.json({ success: true });
       }
+
     });
   });
 });
@@ -980,9 +998,9 @@ app.post("/api/finance/transactions", (req, res) => {
   });
 });
 
-// Supply API
-app.get("/api/supply/orders", (req, res) => {
-  db.all('SELECT * FROM supply_orders ORDER BY date DESC', [], (err, rows) => {
+// Purchase Plans API
+app.get("/api/supply/plans", (req, res) => {
+  db.all('SELECT * FROM purchase_plans ORDER BY created_at DESC', [], (err, rows) => {
     if (err) res.status(500).json({ error: err.message });
     else {
       const parsed = rows.map((row: any) => ({
@@ -994,17 +1012,43 @@ app.get("/api/supply/orders", (req, res) => {
   });
 });
 
-app.post("/api/supply/orders", (req, res) => {
-  const { order_id, vendor, amount, date, status, items } = req.body;
+app.post("/api/supply/plans", (req, res) => {
+  const { title, month, total_amount, items, status } = req.body;
   const id = crypto.randomUUID();
   db.run(`
-    INSERT INTO supply_orders (id, order_id, vendor, amount, date, status, items)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `, [id, order_id, vendor, amount, date, status, JSON.stringify(items)], function(err) {
+    INSERT INTO purchase_plans (id, title, month, total_amount, items, status)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `, [id, title, month, total_amount || 0, JSON.stringify(items || []), status || 'DRAFT'], function(err) {
     if (err) res.status(500).json({ error: err.message });
     else {
-      logOperation('SUPPLY', 'ORDER', vendor, `${amount} so'mlik buyurtma: ${status}`);
+      logOperation('SUPPLY', 'PLAN_CREATE', title, `Yangi xarid rejasi yaratildi: ${month}`);
       res.json({ success: true, id });
+    }
+  });
+});
+
+app.put("/api/supply/plans/:id", (req, res) => {
+  const { title, month, total_amount, items, status } = req.body;
+  const { id } = req.params;
+  db.run(`
+    UPDATE purchase_plans SET title = ?, month = ?, total_amount = ?, items = ?, status = ?
+    WHERE id = ?
+  `, [title, month, total_amount, JSON.stringify(items), status, id], function(err) {
+    if (err) res.status(500).json({ error: err.message });
+    else {
+      logOperation('SUPPLY', 'PLAN_UPDATE', title, `Xarid rejasi yangilandi: ${status}`);
+      res.json({ success: true });
+    }
+  });
+});
+
+app.delete("/api/supply/plans/:id", (req, res) => {
+  const { id } = req.params;
+  db.run('DELETE FROM purchase_plans WHERE id = ?', [id], function(err) {
+    if (err) res.status(500).json({ error: err.message });
+    else {
+      logOperation('SUPPLY', 'PLAN_DELETE', id, 'Xarid rejasi o\'chirildi');
+      res.json({ success: true });
     }
   });
 });
@@ -1033,6 +1077,35 @@ app.post("/api/suppliers", (req, res) => {
   });
 });
 
+app.put("/api/suppliers/:id", (req, res) => {
+  const { first_name, last_name, brand, phone, contact_user, telegram_link, type, score } = req.body;
+  const { id } = req.params;
+  const name = `${first_name} ${last_name}`.trim() || brand || 'Noma\'lum';
+  
+  db.run(`
+    UPDATE suppliers 
+    SET first_name = ?, last_name = ?, brand = ?, name = ?, type = ?, score = ?, phone = ?, contact_user = ?, telegram_link = ?
+    WHERE id = ?
+  `, [first_name, last_name, brand, name, type || 'Ta\'minotchi', score || 5.0, phone, contact_user, telegram_link, id], function(err) {
+    if (err) res.status(500).json({ error: err.message });
+    else {
+      logOperation('SUPPLY', 'VENDOR_UPDATE', name, 'Yetkazib beruvchi ma\'lumotlari yangilandi');
+      res.json({ success: true });
+    }
+  });
+});
+
+app.delete("/api/suppliers/:id", (req, res) => {
+  const { id } = req.params;
+  db.run('DELETE FROM suppliers WHERE id = ?', [id], function(err) {
+    if (err) res.status(500).json({ error: err.message });
+    else {
+      logOperation('SUPPLY', 'VENDOR_DELETE', id, 'Yetkazib beruvchi o\'chirildi');
+      res.json({ success: true });
+    }
+  });
+});
+
 // Required Products API
 app.get("/api/supply/required-products", (req, res) => {
   db.all('SELECT * FROM required_products ORDER BY created_at DESC', [], (err, rows) => {
@@ -1056,11 +1129,48 @@ app.post("/api/supply/required-products", (req, res) => {
   });
 });
 
+app.put("/api/supply/required-products/:id", (req, res) => {
+  const { name, price, quantity, unit, brand, category } = req.body;
+  const { id } = req.params;
+  db.run(`
+    UPDATE required_products 
+    SET name = ?, price = ?, quantity = ?, unit = ?, brand = ?, category = ?
+    WHERE id = ?
+  `, [name, price, quantity, unit, brand, category, id], function(err) {
+    if (err) res.status(500).json({ error: err.message });
+    else {
+      logOperation('SUPPLY', 'REQUEST_UPDATE', name, 'Kerakli mahsulot yangilandi');
+      res.json({ success: true });
+    }
+  });
+});
+
+app.delete("/api/supply/required-products/:id", (req, res) => {
+  const { id } = req.params;
+  db.run('DELETE FROM required_products WHERE id = ?', [id], function(err) {
+    if (err) res.status(500).json({ error: err.message });
+    else {
+      logOperation('SUPPLY', 'REQUEST_DELETE', id, 'Kerakli mahsulot o\'chirildi');
+      res.json({ success: true });
+    }
+  });
+});
+
+app.delete("/api/supply/required-products", (req, res) => {
+  db.run('DELETE FROM required_products', [], function(err) {
+    if (err) res.status(500).json({ error: err.message });
+    else {
+      logOperation('SUPPLY', 'REQUEST_CLEAR', 'ALL', 'Barcha kerakli mahsulotlar ro\'yxati tozalandi');
+      res.json({ success: true });
+    }
+  });
+});
+
 // Messages System initialization
 db.serialize(() => {
   db.run(`
     CREATE TABLE IF NOT EXISTS messages (
-      id SERIAL PRIMARY KEY,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
       sender_id TEXT NOT NULL,
       receiver_id TEXT NOT NULL,
       text TEXT NOT NULL,
@@ -1069,6 +1179,45 @@ db.serialize(() => {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `);
+
+  // Settings Table for Kindergarten Logo and Name
+  db.run(`
+    CREATE TABLE IF NOT EXISTS settings (
+      key TEXT PRIMARY KEY,
+      value TEXT
+    )
+  `, () => {
+    // Seed default values if not exists
+    db.run("INSERT OR IGNORE INTO settings (key, value) VALUES ('kg_name', 'KinderFlow')");
+    db.run("INSERT OR IGNORE INTO settings (key, value) VALUES ('kg_logo', '')");
+  });
+});
+
+// Settings API
+app.get("/api/settings", (req, res) => {
+  db.all("SELECT * FROM settings", [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    const settings = rows.reduce((acc: any, row: any) => {
+      acc[row.key] = row.value;
+      return acc;
+    }, {});
+    res.json(settings);
+  });
+});
+
+app.post("/api/settings", (req, res) => {
+  const { kg_name, kg_logo } = req.body;
+  
+  db.serialize(() => {
+    if (kg_name !== undefined) {
+      db.run("INSERT OR REPLACE INTO settings (key, value) VALUES ('kg_name', ?)", [kg_name]);
+    }
+    if (kg_logo !== undefined) {
+      db.run("INSERT OR REPLACE INTO settings (key, value) VALUES ('kg_logo', ?)", [kg_logo]);
+    }
+    
+    res.json({ success: true });
+  });
 });
 
 // Messaging API
@@ -1140,11 +1289,8 @@ app.get("/api/messages/contacts", (req, res) => {
   `, [parentId], (err, baseContacts: any[]) => {
     if (err) return res.status(500).json({ error: err.message });
     
-    if (baseContacts.length === 0) {
-      // Fallback if no specific teacher found
-      baseContacts = [
-        { id: 'teacher_1', name: 'Tarbiyachi', role: 'teacher' }
-      ];
+    if (!baseContacts || baseContacts.length === 0) {
+      return res.json([]);
     }
 
     // Count unread messages for each contact
@@ -1233,9 +1379,23 @@ app.post("/api/parent-portal/pickups", (req, res) => {
     if (err) res.status(500).json({ error: err.message });
     else {
       logOperation('CREATE', 'PICKUP', full_name, `Yangi vakil qo'shildi (${relation})`);
+
+      // Send notification to teacher
+      db.get("SELECT first_name, last_name, parent_account_id, group_id FROM children WHERE id = ?", [child_id], (err, child: any) => {
+        if (child && child.parent_account_id && child.group_id) {
+          db.get("SELECT user_id FROM staff WHERE group_id = ? AND position = 'tarbiyachi' LIMIT 1", [child.group_id], (err, staff: any) => {
+             if (staff && staff.user_id) {
+               const msg = `Bildirishnoma: ${child.first_name} ${child.last_name} uchun yangi vakil qo'shildi: ${full_name} (${relation})`;
+               db.run("INSERT INTO messages (sender_id, receiver_id, text, sender_role) VALUES (?, ?, ?, 'parent')", [child.parent_account_id, staff.user_id, msg]);
+             }
+          });
+        }
+      });
+
       res.json({ success: true, id });
     }
   });
+
 });
 
 app.delete("/api/parent-portal/pickups/:id", (req, res) => {

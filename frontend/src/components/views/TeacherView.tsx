@@ -562,6 +562,12 @@ const GroupAttendanceView = ({ groupData, onSaved }: { groupData: any, onSaved: 
   const [isLoading, setIsLoading] = useState(true);
   const [attendance, setAttendance] = useState<Record<string, { status: AttendanceStatus | null, arrival_time?: string | null }>>({});
 
+  const isTimeExpired = useMemo(() => {
+    const now = new Date();
+    const hours = now.getHours();
+    return hours >= 9;
+  }, []);
+
   useEffect(() => {
     const fetchExistingAttendance = async () => {
       try {
@@ -613,6 +619,7 @@ const GroupAttendanceView = ({ groupData, onSaved }: { groupData: any, onSaved: 
   }, [attendance, groupData.children]);
 
   const handleStatusChange = (childId: string, status: AttendanceStatus) => {
+    if (isTimeExpired) return;
     setAttendance(prev => {
       let arrivalTime = null;
       const now = new Date().toLocaleTimeString('en-GB', { hour12: false });
@@ -631,6 +638,10 @@ const GroupAttendanceView = ({ groupData, onSaved }: { groupData: any, onSaved: 
   };
 
   const handleSave = async () => {
+    if (isTimeExpired) {
+      showNotification('Davomat qilish vaqti tugagan (soat 09:00 gacha)', 'error');
+      return;
+    }
     // Check if all children have a status selected
     const unselectedCount = (groupData.children || []).filter((c: any) => !attendance[c.id]?.status).length;
     if (unselectedCount > 0) {
@@ -671,11 +682,28 @@ const GroupAttendanceView = ({ groupData, onSaved }: { groupData: any, onSaved: 
 
   return (
     <div className="space-y-6">
+      {isTimeExpired && (
+        <div className="bg-rose-50 border-2 border-rose-100 p-6 rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-6 animate-in fade-in slide-in-from-top-4 duration-500 shadow-sm">
+           <div className="flex items-center gap-4 text-center md:text-left">
+              <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-rose-500 shadow-sm shrink-0 border border-rose-100">
+                 <AlertCircle size={28} />
+              </div>
+              <div>
+                 <h5 className="text-rose-900 font-black uppercase text-sm tracking-tight">Davomat vaqti tugadi</h5>
+                 <p className="text-rose-700/70 text-[10px] font-bold uppercase tracking-widest mt-1">Davomat har kuni faqat soat 09:00 gacha qabul qilinadi.</p>
+              </div>
+           </div>
+           <div className="px-6 py-2 bg-rose-500 text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg shadow-rose-500/20">
+              Vaqt: {new Date().toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}
+           </div>
+        </div>
+      )}
+
       <div className="flex justify-end">
         <button 
           onClick={handleSave} 
-          disabled={isSaving}
-          className="w-full md:w-auto bg-brand-primary text-white font-black uppercase text-xs tracking-widest px-10 py-5 rounded-2xl hover:shadow-2xl hover:shadow-brand-primary/30 transition-all active:scale-95 disabled:opacity-50"
+          disabled={isSaving || isTimeExpired}
+          className={`w-full md:w-auto font-black uppercase text-xs tracking-widest px-10 py-5 rounded-2xl transition-all active:scale-95 disabled:opacity-50 ${isTimeExpired ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-brand-primary text-white hover:shadow-2xl hover:shadow-brand-primary/30'}`}
         >
           {isSaving ? 'Saqlanmoqda...' : 'Davomatni saqlash'}
         </button>
@@ -751,30 +779,33 @@ const GroupAttendanceView = ({ groupData, onSaved }: { groupData: any, onSaved: 
                 <div className="grid grid-cols-1 sm:flex gap-2 w-full sm:w-auto">
                   <button 
                     onClick={() => handleStatusChange(child.id, 'early')}
+                    disabled={isTimeExpired}
                     className={`px-4 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${
                       attendance[child.id]?.status === 'early' 
                         ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' 
-                        : 'bg-slate-50 text-brand-muted border border-brand-border hover:bg-white'
+                        : isTimeExpired ? 'bg-slate-100 text-slate-300 border-transparent cursor-not-allowed' : 'bg-slate-50 text-brand-muted border border-brand-border hover:bg-white'
                     }`}
                   >
                     <CheckCircle2 size={14} /> 9 gacha keldi
                   </button>
                   <button 
                     onClick={() => handleStatusChange(child.id, 'late')}
+                    disabled={isTimeExpired}
                     className={`px-4 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${
                       attendance[child.id]?.status === 'late' 
                         ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20' 
-                        : 'bg-slate-50 text-brand-muted border border-brand-border hover:bg-white'
+                        : isTimeExpired ? 'bg-slate-100 text-slate-300 border-transparent cursor-not-allowed' : 'bg-slate-50 text-brand-muted border border-brand-border hover:bg-white'
                     }`}
                   >
                     <LucideClock size={14} /> 9 dan keyin keladi
                   </button>
                   <button 
                     onClick={() => handleStatusChange(child.id, 'absent')}
+                    disabled={isTimeExpired}
                     className={`px-4 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${
                       attendance[child.id]?.status === 'absent' 
                         ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/20' 
-                        : 'bg-slate-50 text-brand-muted border border-brand-border hover:bg-white'
+                        : isTimeExpired ? 'bg-slate-100 text-slate-300 border-transparent cursor-not-allowed' : 'bg-slate-50 text-brand-muted border border-brand-border hover:bg-white'
                     }`}
                   >
                     <XCircle size={14} /> Umuman kelmaydi

@@ -11,15 +11,46 @@ export class ChildrenRepository {
       const motherId = crypto.randomUUID();
       const accountId = crypto.randomUUID();
 
-      const login = `user_${Date.now().toString().slice(-6)}`;
+      // Unikal login yaratish: ism + yil (masalan: mirjalol2003)
+      const birthYear = new Date(data.birth_date).getFullYear();
+      const baseLogin = `${data.first_name.toLowerCase().replace(/\s+/g, '')}${birthYear}`;
       
-      // Murakkab 8 xonali parol generatsiya qilish
-      const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
-      let password = "";
-      for (let i = 0; i < 8; i++) {
-        password += charset.charAt(Math.floor(Math.random() * charset.length));
-      }
+      // Login unikalligini tekshirish va kerak bo'lsa raqam qo'shish
+      const checkLogin = (login: string, counter: number = 0): Promise<string> => {
+        const currentLogin = counter === 0 ? login : `${login}${counter}`;
+        return new Promise((res) => {
+          db.get("SELECT id FROM parent_accounts WHERE login = ?", [currentLogin], (err, row) => {
+            if (row) res(checkLogin(login, counter + 1));
+            else res(currentLogin);
+          });
+        });
+      };
+
+      const finalLogin = await checkLogin(baseLogin);
       
+      // Murakkab parol generatsiya qilish (Katta-kichik harf, son, belgi, min 8 ta)
+      const generateComplexPassword = () => {
+        const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        const lower = "abcdefghijklmnopqrstuvwxyz";
+        const digits = "0123456789";
+        const symbols = "!@#$%^&*()_+-=[]{}|;:,.<>?";
+        const all = upper + lower + digits + symbols;
+        
+        let pwd = "";
+        pwd += upper[Math.floor(Math.random() * upper.length)];
+        pwd += lower[Math.floor(Math.random() * lower.length)];
+        pwd += digits[Math.floor(Math.random() * digits.length)];
+        pwd += symbols[Math.floor(Math.random() * symbols.length)];
+        
+        for (let i = 0; i < 4; i++) {
+          pwd += all[Math.floor(Math.random() * all.length)];
+        }
+        
+        // Parolni aralashtirish
+        return pwd.split('').sort(() => 0.5 - Math.random()).join('');
+      };
+
+      const password = generateComplexPassword();
       const passwordHash = await bcrypt.hash(password, 10);
 
       db.serialize(() => {
@@ -31,7 +62,7 @@ export class ChildrenRepository {
         stmtParent.finalize();
 
         const stmtAccount = db.prepare('INSERT INTO parent_accounts (id, login, password_hash) VALUES (?, ?, ?)');
-        stmtAccount.run([accountId, login, passwordHash]);
+        stmtAccount.run([accountId, finalLogin, passwordHash]);
         stmtAccount.finalize();
 
         const stmtChild = db.prepare(`
@@ -51,7 +82,7 @@ export class ChildrenRepository {
           }
           await OperationsRepository.log('CREATE', 'CHILD', `${data.first_name} ${data.last_name}`, 'Yangi bola ruyxatga olindi');
           db.run('COMMIT');
-          resolve({ id: childId, login, password }); // Password returned only once on creation
+          resolve({ id: childId, login: finalLogin, password }); 
         });
         stmtChild.finalize();
       });

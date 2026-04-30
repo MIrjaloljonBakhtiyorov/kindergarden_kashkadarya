@@ -227,7 +227,20 @@ export const ChildFormModal: React.FC<Props> = ({ child, onClose }) => {
             </div>
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold text-brand-muted uppercase ml-1">Otasining telefon raqami *</label>
-              <input {...register('father_phone')} className="w-full bg-slate-50 border border-brand-border rounded-xl py-3 px-4 outline-none" placeholder="+998 90 123 45 67" />
+              <input 
+                {...register('father_phone')} 
+                className="w-full bg-slate-50 border border-brand-border rounded-xl py-3 px-4 outline-none" 
+                placeholder="+998 90 123 45 67"
+                onFocus={(e) => {
+                  if (!e.target.value) e.target.value = '+998';
+                }}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (!val.startsWith('+998')) {
+                    e.target.value = '+998';
+                  }
+                }}
+              />
             </div>
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold text-brand-muted uppercase ml-1">Otasining ishlash joyi</label>
@@ -244,7 +257,20 @@ export const ChildFormModal: React.FC<Props> = ({ child, onClose }) => {
             </div>
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold text-brand-muted uppercase ml-1">Onasining telefon raqami *</label>
-              <input {...register('mother_phone')} className="w-full bg-slate-50 border border-brand-border rounded-xl py-3 px-4 outline-none" placeholder="+998 90 123 45 67" />
+              <input 
+                {...register('mother_phone')} 
+                className="w-full bg-slate-50 border border-brand-border rounded-xl py-3 px-4 outline-none" 
+                placeholder="+998 90 123 45 67"
+                onFocus={(e) => {
+                  if (!e.target.value) e.target.value = '+998';
+                }}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (!val.startsWith('+998')) {
+                    e.target.value = '+998';
+                  }
+                }}
+              />
             </div>
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold text-brand-muted uppercase ml-1">Onasining ishlash joyi</label>
@@ -260,7 +286,7 @@ export const ChildFormModal: React.FC<Props> = ({ child, onClose }) => {
         <div className="flex flex-col sm:flex-row items-center justify-end gap-4 pt-6 border-t border-brand-border">
           <button type="button" onClick={onClose} className="w-full sm:w-auto px-6 py-3 rounded-xl border border-brand-border text-brand-slate font-bold hover:bg-slate-50 transition-colors">Bekor qilish</button>
           <button type="submit" disabled={isSubmitting} className="w-full sm:w-auto px-10 py-3 rounded-xl bg-brand-primary text-white font-bold shadow-lg shadow-brand-primary/20 hover:bg-brand-primary/90 transition-all flex items-center justify-center gap-2">
-            {child ? 'Saqlash' : 'Tasdiqlashga yuborish'} <ArrowRight size={18} />
+            Ma'lumotlarni saqlash <ArrowRight size={18} />
           </button>
         </div>
       </form>

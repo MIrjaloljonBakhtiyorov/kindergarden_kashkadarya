@@ -30,6 +30,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
 
 // Import Section Components
+import { ProfileSection } from '../../features/parent-portal/components/ProfileSection';
 import { SecuritySection } from '../../features/parent-portal/components/SecuritySection';
 import { FinanceSection } from '../../features/parent-portal/components/FinanceSection';
 import { AttendanceSection } from '../../features/parent-portal/components/AttendanceSection';
@@ -47,7 +48,7 @@ type SettingsTab = 'profile' | 'security' | 'menu' | 'medical' | 'messages' | 'f
 const ParentView = () => {
   const { user, logout } = useAuth();
   const { showNotification } = useNotification();
-  const [activeTab, setActiveTab] = useState<SettingsTab>('security');
+  const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
   const [isSaving, setIsSaving] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
@@ -135,6 +136,7 @@ const ParentView = () => {
   };
 
   const navItems: { id: SettingsTab; label: string; icon: any; color: string }[] = [
+    { id: 'profile', label: 'Profil', icon: User, color: 'brand-primary' },
     { id: 'security', label: 'Xavfsizlik', icon: ShieldCheck, color: 'blue-500' },
     { id: 'finance', label: 'Moliya', icon: Wallet, color: 'emerald-500' },
     { id: 'attendance', label: 'Davomat', icon: Calendar, color: 'indigo-500' },
@@ -157,6 +159,7 @@ const ParentView = () => {
     const data = fullPortalData;
 
     switch (activeTab) {
+      case 'profile': return <ProfileSection parentData={parentData} onUpdate={handleProfileUpdate} />;
       case 'finance': return <FinanceSection data={data} />;
       case 'attendance': return <AttendanceSection data={data} childId={user.childId} onUpdate={handleProfileUpdate} />;
       case 'menu': return <MenuSection data={data} childId={user.childId} />;

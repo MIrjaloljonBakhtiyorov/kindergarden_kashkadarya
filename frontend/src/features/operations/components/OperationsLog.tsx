@@ -16,8 +16,7 @@ import {
 import apiClient from '../../../api/apiClient';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-
-
+import { useNotification } from '../../../context/NotificationContext';
 
 interface Operation {
   id: string;
@@ -31,6 +30,7 @@ interface Operation {
 }
 
 export const OperationsLog: React.FC = () => {
+  const { confirm, showNotification } = useNotification();
   const [operations, setOperations] = useState<Operation[]>([]);
   const [activeTab, setActiveTab] = useState<'ALL' | 'INCOMING' | 'OUTGOING' | 'ARCHIVED'>('ALL');
   const [filterDays, setFilterDays] = useState<string>('7');
@@ -61,12 +61,15 @@ export const OperationsLog: React.FC = () => {
   }, [filterDays, activeTab]);
 
   const handleArchive = async (id: string) => {
-    if (!window.confirm('Haqiqatan ham ushbu amalni arxivlamoqchimisiz?')) return;
+    const ok = await confirm('Haqiqatan ham ushbu amalni arxivlamoqchimisiz?');
+    if (!ok) return;
     try {
       await apiClient.post(`/operations/archive/${id}`);
       setOperations(prev => prev.filter(op => op.id !== id));
+      showNotification('Amal arxivlandi', 'success');
     } catch (err) {
       console.error('Failed to archive operation:', err);
+      showNotification('Arxivlashda xatolik', 'error');
     }
   };
 

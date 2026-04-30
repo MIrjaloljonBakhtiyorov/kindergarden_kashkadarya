@@ -46,7 +46,7 @@ const DISHES_POOL: Dish[] = [
 ];
 
 const NutritionistView: React.FC = () => {
-  const { showNotification } = useNotification();
+  const { showNotification, confirm } = useNotification();
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [currentMenu, setCurrentMenu] = useState<any[]>([]);
   const [dishesPool, setDishesPool] = useState<Dish[]>(DISHES_POOL);
@@ -121,7 +121,8 @@ const NutritionistView: React.FC = () => {
   };
 
   const handleDeleteDish = async (id: string) => {
-    if (!window.confirm("Haqiqatan ham ushbu taomni o'chirmoqchimisiz?")) return;
+    const ok = await confirm("Haqiqatan ham ushbu taomni o'chirmoqchimisiz?");
+    if (!ok) return;
     try {
       await apiClient.delete(`/dishes/${id}`);
       showNotification("Taom o'chirildi", 'success');
