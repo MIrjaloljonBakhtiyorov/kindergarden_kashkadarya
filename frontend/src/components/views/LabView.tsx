@@ -421,7 +421,7 @@ const LabView: React.FC = () => {
       {/* Sample Detail View Overlay */}
       <AnimatePresence>
         {selectedSample && (
-          <div className="fixed inset-0 flex items-center justify-center z-[200] p-4 lg:p-12 animate-in fade-in duration-300 bg-black/5">
+          <div className="fixed inset-0 flex items-center justify-center z-[200] p-4 lg:p-12 animate-in fade-in duration-300 bg-black/20">
              <motion.div 
                initial={{ scale: 0.9, opacity: 0 }} 
                animate={{ scale: 1, opacity: 1 }} 
@@ -569,7 +569,7 @@ const LabView: React.FC = () => {
       {/* Add Sample Modal */}
       <AnimatePresence>
         {showAddModal && (
-          <div className="fixed inset-0 flex items-center justify-center z-[200] p-4 animate-in fade-in duration-300 bg-black/5">
+          <div className="fixed inset-0 flex items-center justify-center z-[200] p-4 animate-in fade-in duration-300 bg-black/20">
              <motion.div 
                initial={{ scale: 0.9, opacity: 0 }} 
                animate={{ scale: 1, opacity: 1 }} 

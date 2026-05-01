@@ -44,7 +44,7 @@ const ChefView: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50/50 p-4 md:p-8">
       {!isSanitaryPassed ? (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/20">
           <div className="w-full max-w-4xl max-h-[90vh] shadow-2xl">
             <ChefSanitaryCheck onComplete={handleSanitaryComplete} />
           </div>

@@ -328,7 +328,7 @@ const ChefView: React.FC = () => {
 
       {/* Hygiene Modal */}
       {showHygieneModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/5 animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/20 animate-in fade-in duration-300">
           <div className="bg-white w-full max-w-2xl rounded-[10px] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.2)] overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-300 border border-slate-100">
             <div className="p-10 border-b border-slate-100 flex justify-between items-center bg-brand-depth text-white">
               <div className="flex items-center gap-6">

@@ -397,7 +397,7 @@ const StockBar = ({ label, value, percent, color }) => (
 );
 
 const SupremeLightTempModal = ({ value, onChange, onSave, onClose }) => (
-  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6 bg-slate-950/40 backdrop-blur-md">
+  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6 bg-black/20 backdrop-blur-md">
     <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} className="bg-white border border-slate-100 w-full max-w-lg rounded-3xl md:rounded-[3rem] shadow-3xl overflow-hidden">
       <div className="p-8 md:p-10 bg-gradient-to-br from-orange-500 to-amber-600 text-white flex justify-between items-center relative">
         <div className="flex items-center gap-6 relative z-10">
@@ -422,7 +422,7 @@ const SupremeLightTempModal = ({ value, onChange, onSave, onClose }) => (
 );
 
 const SupremeLightRecipeModal = ({ task, onClose }) => (
-  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6 bg-slate-950/40 backdrop-blur-md">
+  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6 bg-black/20 backdrop-blur-md">
     <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} className="bg-white border border-slate-100 w-full max-w-3xl rounded-3xl md:rounded-[3.5rem] shadow-3xl overflow-hidden">
       <div className="p-8 md:p-10 bg-blue-600 text-white flex justify-between items-center">
         <div className="flex items-center gap-6">

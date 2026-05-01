@@ -91,7 +91,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       {/* Confirm Dialog */}
       <AnimatePresence>
         {confirmState && (
-          <div className="fixed inset-0 z-[310] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[310] flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}

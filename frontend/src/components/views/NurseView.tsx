@@ -478,7 +478,7 @@ const NurseView: React.FC = () => {
       {/* MEDICAL RECORD MODAL */}
       <AnimatePresence>
         {isRecordModalOpen && selectedChild && (
-          <div className="fixed inset-0 flex items-center justify-center z-[110] p-4 bg-black/5 backdrop-blur-sm">
+          <div className="fixed inset-0 flex items-center justify-center z-[110] p-4 bg-black/20 backdrop-blur-sm">
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-white w-full max-w-2xl rounded-[10px] p-10 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.2)] border border-white/20 relative overflow-y-auto max-h-[90vh] custom-scrollbar">
               <div className="flex justify-between items-start mb-8">
                 <div>

@@ -340,7 +340,7 @@ const StorekeeperView: React.FC = () => {
       {/* Product Form Modal (Add / Edit) */}
       <AnimatePresence>
         {isAddModalOpen && (
-          <div className="fixed inset-0 flex items-center justify-center z-[110] p-4 bg-black/5">
+          <div className="fixed inset-0 flex items-center justify-center z-[110] p-4 bg-black/20">
             <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="bg-white w-full max-w-6xl rounded-[10px] p-10 shadow-2xl overflow-y-auto max-h-[95vh] relative scrollbar-hidden">
               <div className="flex justify-between items-start mb-10 text-brand-depth font-black">
                 <div>
@@ -434,7 +434,7 @@ const StorekeeperView: React.FC = () => {
       {/* Stock In & Stock Out modals (Same as before but integrated) */}
       <AnimatePresence>
         {isStockInModalOpen && (
-          <div className="fixed inset-0 flex items-center justify-center z-[110] p-4 bg-black/5">
+          <div className="fixed inset-0 flex items-center justify-center z-[110] p-4 bg-black/20">
             <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="bg-white w-full max-w-4xl rounded-[10px] p-10 shadow-2xl overflow-y-auto max-h-[95vh] relative scrollbar-hidden">
               <div className="flex justify-between items-start mb-10 text-brand-depth font-black">
                 <h3 className="text-4xl tracking-tight">Zaxira kirimi</h3>
@@ -482,7 +482,7 @@ const StorekeeperView: React.FC = () => {
       {/* Stock Out Modal (Enhanced) */}
       <AnimatePresence>
         {isOutModalOpen && (
-          <div className="fixed inset-0 flex items-center justify-center z-[110] p-4 bg-black/5">
+          <div className="fixed inset-0 flex items-center justify-center z-[110] p-4 bg-black/20">
             <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="bg-white w-full max-w-xl rounded-[10px] p-12 shadow-2xl relative">
               <div className="flex justify-between items-start mb-10">
                 <div>

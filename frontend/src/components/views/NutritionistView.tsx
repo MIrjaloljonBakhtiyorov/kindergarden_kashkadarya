@@ -374,7 +374,7 @@ const NutritionistView: React.FC = () => {
 
       {/* Dish Selection Modal */}
       {isSelecting && isSelecting.open && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 animate-in fade-in bg-black/5">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 animate-in fade-in bg-black/20">
           <div className="bg-white w-full max-w-5xl rounded-[10px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
             <header className="p-8 border-b border-brand-border flex justify-between items-center bg-slate-50/50">
               <div>
@@ -421,7 +421,7 @@ const NutritionistView: React.FC = () => {
 
       {/* Dish Management Modal */}
       {isManagingDishes && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 animate-in fade-in bg-black/5">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 animate-in fade-in bg-black/20">
           <div className="bg-white w-full max-w-6xl rounded-[10px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
             <header className="p-8 border-b border-brand-border flex justify-between items-center bg-slate-50/50">
               <div>

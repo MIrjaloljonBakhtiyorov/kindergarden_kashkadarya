@@ -185,7 +185,7 @@ export const ParentsTable: React.FC = () => {
       </div>
 
       {deletingId && (
-        <div className="fixed inset-0 flex items-center justify-center z-[200] p-4 bg-black/5">
+        <div className="fixed inset-0 flex items-center justify-center z-[200] p-4 bg-black/20">
           <div className="bg-white w-full max-w-sm rounded-[10px] shadow-2xl overflow-hidden border border-white/20 animate-in zoom-in-95 duration-200 p-8 text-center">
             <div className="w-20 h-20 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-6">
               <AlertTriangle size={40} />

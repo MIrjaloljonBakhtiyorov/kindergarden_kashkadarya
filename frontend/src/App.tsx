@@ -145,7 +145,7 @@ const App: React.FC = () => {
           {/* Mobile Overlay */}
           {isSidebarOpen && (
             <div 
-              className="fixed inset-0 z-[55] lg:hidden bg-black/40 backdrop-blur-sm"
+              className="fixed inset-0 z-[55] lg:hidden bg-black/20 backdrop-blur-sm"
               onClick={() => setIsSidebarOpen(false)}
             ></div>
           )}
