@@ -13,20 +13,33 @@ export class ChildrenRepository {
 
       // Unikal login yaratish: ism + yil (masalan: mirjalol2003)
       const birthYear = new Date(data.birth_date).getFullYear();
-      const baseLogin = `${data.first_name.toLowerCase().replace(/\s+/g, '')}${birthYear}`;
+      const baseLogin = data.parent_login && data.parent_login !== '' 
+        ? data.parent_login.toLowerCase().replace(/\s+/g, '') 
+        : `${data.first_name.toLowerCase().replace(/\s+/g, '')}${birthYear}`;
       
-      // Login unikalligini tekshirish va kerak bo'lsa raqam qo'shish
+      // Login unikalligini tekshirish va kerak bo'lsa raqam qo'shish (faqat avtomatik yaratilganda)
       const checkLogin = (login: string, counter: number = 0): Promise<string> => {
         const currentLogin = counter === 0 ? login : `${login}${counter}`;
         return new Promise((res) => {
           db.get("SELECT id FROM parent_accounts WHERE login = ?", [currentLogin], (err, row) => {
-            if (row) res(checkLogin(login, counter + 1));
+            if (row) {
+              if (data.parent_login && data.parent_login !== '') {
+                // Agar foydalanuvchi loginni o'zi kiritgan bo'lsa va u band bo'lsa, xato qaytaramiz
+                res(null as any); 
+              } else {
+                res(checkLogin(login, counter + 1));
+              }
+            }
             else res(currentLogin);
           });
         });
       };
 
       const finalLogin = await checkLogin(baseLogin);
+
+      if (!finalLogin) {
+        return reject(new Error("Ushbu login band. Iltimos, boshqa login tanlang."));
+      }
       
       // Murakkab parol generatsiya qilish (Katta-kichik harf, son, belgi, min 8 ta)
       const generateComplexPassword = () => {
@@ -111,7 +124,7 @@ export class ChildrenRepository {
         stmtChild.finalize();
 
         // Find parent IDs to update them too
-        db.get('SELECT father_id, mother_id FROM children WHERE id = ?', [id], async (err, child: any) => {
+        db.get('SELECT father_id, mother_id, parent_account_id FROM children WHERE id = ?', [id], async (err, child: any) => {
           if (err || !child) {
             db.run('ROLLBACK');
             return reject(err || new Error('Child not found'));
@@ -122,6 +135,19 @@ export class ChildrenRepository {
             stmtParent.run([data.father_full_name, data.father_workplace, data.father_phone, data.father_passport, child.father_id]);
             stmtParent.run([data.mother_full_name, data.mother_workplace, data.mother_phone, data.mother_passport, child.mother_id]);
             stmtParent.finalize();
+
+            // Update parent account login if provided
+            if (data.parent_login && child.parent_account_id) {
+               // Check if login is taken by someone else
+               const loginTaken = await new Promise((res) => {
+                 db.get("SELECT id FROM parent_accounts WHERE login = ? AND id != ?", [data.parent_login, child.parent_account_id], (err, row) => res(row));
+               });
+               if (loginTaken) {
+                 db.run('ROLLBACK');
+                 return reject(new Error("Ushbu login allaqachon band."));
+               }
+               db.run('UPDATE parent_accounts SET login = ? WHERE id = ?', [data.parent_login, child.parent_account_id]);
+            }
 
             await OperationsRepository.log('UPDATE', 'CHILD', `${data.first_name} ${data.last_name}`, 'Bolaning ma\'lumotlari tahrirlandi');
             

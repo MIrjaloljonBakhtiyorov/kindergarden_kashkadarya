@@ -42,8 +42,9 @@ export const ChildFormModal: React.FC<Props> = ({ child, onClose }) => {
       mother_workplace: child.mother_workplace || '',
       mother_phone: child.mother_phone,
       mother_passport: child.mother_passport || '',
+      parent_login: child.parent_login || '',
       status: child.status
-    } : { status: 'PENDING', gender: 'M', passport_info: '', address: '', weight: '', height: '', allergies: '', father_passport: '', mother_passport: '', father_workplace: '', mother_workplace: '' }
+    } : { status: 'PENDING', gender: 'M', passport_info: '', address: '', weight: '', height: '', allergies: '', father_passport: '', mother_passport: '', father_workplace: '', mother_workplace: '', parent_login: '' }
   });
 
   const handlePassportChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -145,7 +146,13 @@ export const ChildFormModal: React.FC<Props> = ({ child, onClose }) => {
             </div>
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold text-brand-muted uppercase ml-1">Tug'ilgan sana *</label>
-              <input type="date" {...register('birth_date')} className="w-full bg-slate-50 border border-brand-border rounded-xl py-3 px-4 focus:ring-2 focus:ring-brand-primary/10 outline-none" />
+              <input 
+                type="date" 
+                {...register('birth_date')} 
+                min="1970-01-01"
+                max="2040-12-31"
+                className="w-full bg-slate-50 border border-brand-border rounded-xl py-3 px-4 focus:ring-2 focus:ring-brand-primary/10 outline-none" 
+              />
               {errors.birth_date && <p className="text-red-500 text-xs">{errors.birth_date.message}</p>}
             </div>
             <div className="space-y-1.5">
@@ -182,6 +189,19 @@ export const ChildFormModal: React.FC<Props> = ({ child, onClose }) => {
                   <span className="text-sm font-medium">Qiz</span>
                 </label>
               </div>
+            </div>
+            <div className="space-y-1.5 md:col-span-2">
+              <label className="text-[10px] font-bold text-brand-muted uppercase ml-1">Profil logini (Ixtiyoriy, avtomatik yaratiladi)</label>
+              <div className="relative">
+                <input 
+                  {...register('parent_login')} 
+                  className="w-full bg-slate-50 border border-brand-border rounded-xl py-3 px-4 focus:ring-2 focus:ring-brand-primary/10 outline-none" 
+                  placeholder="masalan: mirjalol2020"
+                />
+                <ShieldCheck className="absolute right-4 top-3.5 text-brand-slate" size={18} />
+              </div>
+              {errors.parent_login && <p className="text-red-500 text-xs">{errors.parent_login.message}</p>}
+              <p className="text-[10px] text-brand-muted italic mt-1">Agar bo'sh qolsa, tizim bolaning ismi va tug'ilgan yili asosida login yaratadi.</p>
             </div>
           </div>
         </div>

@@ -83,77 +83,77 @@ const TeacherView: React.FC<TeacherViewProps> = ({ groups: initialGroups }) => {
     const mealPortions = todayStats.present; 
 
     return (
-      <div className="p-8 animate-in fade-in max-w-7xl mx-auto space-y-10">
+      <div className="p-4 sm:p-8 animate-in fade-in max-w-7xl mx-auto space-y-6 sm:space-y-10">
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h2 className="text-4xl font-black text-brand-depth tracking-tight">Xush kelibsiz!</h2>
-            <p className="text-brand-muted font-bold uppercase text-[10px] tracking-widest mt-2 flex items-center gap-2">
+            <h2 className="text-2xl sm:text-4xl font-black text-brand-depth tracking-tight">Xush kelibsiz!</h2>
+            <p className="text-brand-muted font-bold uppercase text-[9px] sm:text-[10px] tracking-widest mt-1 sm:mt-2 flex items-center gap-2">
               <Calendar size={14} className="text-brand-primary" />
               Bugun: {new Date().toLocaleDateString('uz-UZ', { day: 'numeric', month: 'long', year: 'numeric' })}
             </p>
           </div>
         </header>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-          <div className="bg-white p-6 rounded-[2rem] border border-brand-border shadow-sm flex flex-col items-center text-center">
-            <div className="w-12 h-12 bg-blue-50 text-brand-primary rounded-2xl flex items-center justify-center mb-4">
-              <Users size={24} />
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+          <div className="bg-white p-4 sm:p-6 rounded-2xl sm:rounded-[2rem] border border-brand-border shadow-sm flex flex-col items-center text-center">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-50 text-brand-primary rounded-xl sm:rounded-2xl flex items-center justify-center mb-2 sm:mb-4">
+              <Users size={20} className="sm:w-6 sm:h-6" />
             </div>
-            <p className="text-[9px] font-black text-brand-muted uppercase tracking-[0.2em] mb-1">Jami bolalar</p>
-            <p className="text-3xl font-black text-brand-depth">{totalKids}</p>
+            <p className="text-[8px] sm:text-[9px] font-black text-brand-muted uppercase tracking-wider sm:tracking-[0.2em] mb-1">Jami bolalar</p>
+            <p className="text-xl sm:text-3xl font-black text-brand-depth">{totalKids}</p>
           </div>
 
-          <div className="bg-emerald-50/50 p-6 rounded-[2rem] border border-emerald-100 flex flex-col items-center text-center">
-            <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mb-4">
-              <CheckCircle2 size={24} />
+          <div className="bg-emerald-50/50 p-4 sm:p-6 rounded-2xl sm:rounded-[2rem] border border-emerald-100 flex flex-col items-center text-center">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-emerald-100 text-emerald-600 rounded-xl sm:rounded-2xl flex items-center justify-center mb-2 sm:mb-4">
+              <CheckCircle2 size={20} className="sm:w-6 sm:h-6" />
             </div>
-            <p className="text-[9px] font-black text-emerald-600 uppercase tracking-[0.2em] mb-1">9 gacha kelganlar</p>
-            <p className="text-3xl font-black text-emerald-600">{earlyArrivals}</p>
+            <p className="text-[8px] sm:text-[9px] font-black text-emerald-600 uppercase tracking-wider sm:tracking-[0.2em] mb-1">9 gacha kelganlar</p>
+            <p className="text-xl sm:text-3xl font-black text-emerald-600">{earlyArrivals}</p>
           </div>
 
-          <div className="bg-amber-50/50 p-6 rounded-[2rem] border border-amber-100 flex flex-col items-center text-center">
-            <div className="w-12 h-12 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center mb-4">
-              <AlertCircle size={24} />
+          <div className="bg-amber-50/50 p-4 sm:p-6 rounded-2xl sm:rounded-[2rem] border border-amber-100 flex flex-col items-center text-center">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-amber-100 text-amber-600 rounded-xl sm:rounded-2xl flex items-center justify-center mb-2 sm:mb-4">
+              <AlertCircle size={20} className="sm:w-6 sm:h-6" />
             </div>
-            <p className="text-[9px] font-black text-amber-600 uppercase tracking-[0.2em] mb-1">9 dan keyin kelganlar</p>
-            <p className="text-3xl font-black text-amber-600">{lateArrivals}</p>
+            <p className="text-[8px] sm:text-[9px] font-black text-amber-600 uppercase tracking-wider sm:tracking-[0.2em] mb-1">9 dan keyin</p>
+            <p className="text-xl sm:text-3xl font-black text-amber-600">{lateArrivals}</p>
           </div>
 
-          <div className="bg-rose-50/50 p-6 rounded-[2rem] border border-rose-100 flex flex-col items-center text-center">
-            <div className="w-12 h-12 bg-rose-100 text-rose-500 rounded-2xl flex items-center justify-center mb-4">
-              <XCircle size={24} />
+          <div className="bg-rose-50/50 p-4 sm:p-6 rounded-2xl sm:rounded-[2rem] border border-rose-100 flex flex-col items-center text-center">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-rose-100 text-rose-500 rounded-xl sm:rounded-2xl flex items-center justify-center mb-2 sm:mb-4">
+              <XCircle size={20} className="sm:w-6 sm:h-6" />
             </div>
-            <p className="text-[9px] font-black text-rose-500 uppercase tracking-[0.2em] mb-1">Umuman kelmaganlar</p>
-            <p className="text-3xl font-black text-rose-500">{notArrived}</p>
+            <p className="text-[8px] sm:text-[9px] font-black text-rose-500 uppercase tracking-wider sm:tracking-[0.2em] mb-1">Kelmaganlar</p>
+            <p className="text-xl sm:text-3xl font-black text-rose-500">{notArrived}</p>
           </div>
 
-          <div className="bg-indigo-50/50 p-6 rounded-[2rem] border border-indigo-100 flex flex-col items-center text-center">
-            <div className="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center mb-4">
-              <Utensils size={24} />
+          <div className="bg-indigo-50/50 p-4 sm:p-6 rounded-2xl sm:rounded-[2rem] border border-indigo-100 flex flex-col items-center text-center col-span-2 lg:col-span-1">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-indigo-100 text-indigo-600 rounded-xl sm:rounded-2xl flex items-center justify-center mb-2 sm:mb-4">
+              <Utensils size={20} className="sm:w-6 sm:h-6" />
             </div>
-            <p className="text-[9px] font-black text-indigo-600 uppercase tracking-[0.2em] mb-1">Ovqat porsiyasi</p>
-            <p className="text-3xl font-black text-indigo-600">{mealPortions}</p>
+            <p className="text-[8px] sm:text-[9px] font-black text-indigo-600 uppercase tracking-wider sm:tracking-[0.2em] mb-1">Ovqat porsiyasi</p>
+            <p className="text-xl sm:text-3xl font-black text-indigo-600">{mealPortions}</p>
           </div>
         </div>
 
         <section>
-          <h3 className="text-sm font-black text-brand-muted uppercase tracking-[0.2em] mb-6 ml-1">Guruhni tanlang</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <h3 className="text-[10px] sm:text-sm font-black text-brand-muted uppercase tracking-[0.2em] mb-4 sm:mb-6 ml-1">Guruhni tanlang</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {displayGroups.map(g => (
               <button 
                 key={(g as any).id || g.name} 
                 onClick={() => setSelectedGroup(g.name)} 
-                className="p-8 bg-white border border-brand-border rounded-[2.5rem] text-left transition-all hover:border-brand-primary hover:shadow-2xl hover:shadow-brand-primary/5 group relative overflow-hidden"
+                className="p-6 sm:p-8 bg-white border border-brand-border rounded-3xl sm:rounded-[2.5rem] text-left transition-all hover:border-brand-primary hover:shadow-2xl hover:shadow-brand-primary/5 group relative overflow-hidden"
               >
                 <div className="absolute top-0 right-0 w-24 h-24 bg-brand-primary/5 rounded-full -mr-12 -mt-12 group-hover:scale-150 transition-transform duration-700"></div>
                 <div className="relative z-10">
-                  <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-brand-primary group-hover:text-white transition-all duration-300">
-                    <Users size={24} />
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-slate-50 rounded-xl sm:rounded-2xl flex items-center justify-center mb-4 sm:mb-6 group-hover:bg-brand-primary group-hover:text-white transition-all duration-300">
+                    <Users size={20} className="sm:w-6 sm:h-6" />
                   </div>
-                  <span className="font-black text-brand-depth block text-xl mb-1 tracking-tight">{g.name}</span>
+                  <span className="font-black text-brand-depth block text-lg sm:text-xl mb-1 tracking-tight">{g.name}</span>
                   <div className="flex flex-col gap-1">
-                    <p className="text-[10px] text-brand-muted font-bold uppercase tracking-wider">Tarbiyachi: {(g as any).teacher_name}</p>
-                    <p className="text-[10px] text-brand-primary font-black uppercase tracking-widest mt-2">{(g as any).children?.length || 0} ta bola</p>
+                    <p className="text-[9px] sm:text-[10px] text-brand-muted font-bold uppercase tracking-wider">Tarbiyachi: {(g as any).teacher_name}</p>
+                    <p className="text-[9px] sm:text-[10px] text-brand-primary font-black uppercase tracking-widest mt-1 sm:mt-2">{(g as any).children?.length || 0} ta bola</p>
                   </div>
                 </div>
               </button>
@@ -168,26 +168,26 @@ const TeacherView: React.FC<TeacherViewProps> = ({ groups: initialGroups }) => {
   if (!groupData) return null;
 
   return (
-    <div className="p-8 space-y-6 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-8 space-y-6 max-w-7xl mx-auto">
       {/* Group Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-8 rounded-[2.5rem] border border-brand-border shadow-xl shadow-slate-200/50 gap-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-6 sm:p-8 rounded-3xl sm:rounded-[2.5rem] border border-brand-border shadow-xl shadow-slate-200/50 gap-4 sm:gap-6">
         <div className="space-y-1">
-          <button onClick={() => setSelectedGroup(null)} className="text-brand-primary font-black text-[10px] uppercase tracking-widest flex items-center gap-2 mb-2 hover:translate-x-[-4px] transition-transform">
-            <ArrowLeft size={14} /> Barcha guruhlar
+          <button onClick={() => setSelectedGroup(null)} className="text-brand-primary font-black text-[9px] sm:text-[10px] uppercase tracking-widest flex items-center gap-2 mb-2 hover:translate-x-[-4px] transition-transform">
+            <ArrowLeft size={12} /> Barcha guruhlar
           </button>
-          <h2 className="text-3xl font-black text-brand-depth tracking-tight">"{groupData.name}" guruhi</h2>
-          <div className="flex items-center gap-4 mt-2">
+          <h2 className="text-2xl sm:text-3xl font-black text-brand-depth tracking-tight">"{groupData.name}" guruhi</h2>
+          <div className="flex items-center gap-2 sm:gap-4 mt-2 sm:mt-3">
             <button 
               onClick={() => setActiveTab('attendance')}
-              className={`text-[10px] font-black uppercase tracking-[0.2em] px-4 py-2 rounded-full transition-all ${activeTab === 'attendance' ? 'bg-brand-primary text-white' : 'bg-slate-100 text-brand-muted hover:bg-slate-200'}`}
+              className={`text-[8px] sm:text-[10px] font-black uppercase tracking-wider sm:tracking-[0.2em] px-3 sm:px-4 py-1.5 sm:py-2 rounded-full transition-all ${activeTab === 'attendance' ? 'bg-brand-primary text-white' : 'bg-slate-100 text-brand-muted hover:bg-slate-200'}`}
             >
               Davomat
             </button>
             <button 
               onClick={() => setActiveTab('messages')}
-              className={`text-[10px] font-black uppercase tracking-[0.2em] px-4 py-2 rounded-full transition-all flex items-center gap-2 ${activeTab === 'messages' ? 'bg-brand-primary text-white' : 'bg-slate-100 text-brand-muted hover:bg-slate-200'}`}
+              className={`text-[8px] sm:text-[10px] font-black uppercase tracking-wider sm:tracking-[0.2em] px-3 sm:px-4 py-1.5 sm:py-2 rounded-full transition-all flex items-center gap-2 ${activeTab === 'messages' ? 'bg-brand-primary text-white' : 'bg-slate-100 text-brand-muted hover:bg-slate-200'}`}
             >
-              Xabarlar <span className="bg-red-500 text-white w-4 h-4 rounded-full flex items-center justify-center text-[8px]">3</span>
+              Xabarlar <span className="bg-red-500 text-white w-3 h-3 sm:w-4 sm:h-4 rounded-full flex items-center justify-center text-[7px] sm:text-[8px]">3</span>
             </button>
           </div>
         </div>
@@ -751,22 +751,22 @@ const GroupAttendanceView = ({ groupData, onSaved }: { groupData: any, onSaved: 
         </div>
       </div>
       
-      <div className="bg-white rounded-[2.5rem] border border-brand-border shadow-sm overflow-hidden">
-        <div className="p-8 border-b border-brand-border bg-slate-50/30">
-          <h3 className="font-black text-brand-depth uppercase text-xs tracking-widest flex items-center gap-2">
-            <ClipboardCheck size={18} className="text-brand-primary" />
+      <div className="bg-white rounded-3xl sm:rounded-[2.5rem] border border-brand-border shadow-sm overflow-hidden">
+        <div className="p-6 sm:p-8 border-b border-brand-border bg-slate-50/30">
+          <h3 className="font-black text-brand-depth uppercase text-[10px] sm:text-xs tracking-widest flex items-center gap-2">
+            <ClipboardCheck size={16} className="text-brand-primary" />
             Bolalar ro'yxati
           </h3>
         </div>
         <div className="divide-y divide-slate-50">
           {(groupData.children || []).length === 0 ? (
-            <div className="p-20 text-center text-brand-muted font-bold italic">Guruhda bolalar yo'q</div>
+            <div className="p-10 sm:p-20 text-center text-brand-muted font-bold italic text-sm">Guruhda bolalar yo'q</div>
           ) : (
             groupData.children.map((child: any) => (
-              <div key={child.id} className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between hover:bg-slate-50/50 transition-colors gap-4">
-                <div>
-                  <span className="font-bold text-brand-depth">{child.first_name || child.name} {child.last_name || ''}</span>
-                  <p className="text-[9px] text-brand-muted font-bold mt-1 uppercase tracking-tight">
+              <div key={child.id} className="p-4 sm:p-6 flex flex-col lg:flex-row items-start lg:items-center justify-between hover:bg-slate-50/50 transition-colors gap-4">
+                <div className="min-w-0">
+                  <span className="font-bold text-brand-depth text-sm sm:text-base block truncate">{child.first_name || child.name} {child.last_name || ''}</span>
+                  <p className="text-[9px] sm:text-[10px] text-brand-muted font-bold mt-1 uppercase tracking-tight truncate">
                     Status: {
                       attendance[child.id]?.status === 'early' ? '9 gacha keldi' : 
                       attendance[child.id]?.status === 'late' ? '9 dan keyin keladi' : 
@@ -776,39 +776,39 @@ const GroupAttendanceView = ({ groupData, onSaved }: { groupData: any, onSaved: 
                     {attendance[child.id]?.arrival_time && ` • ${attendance[child.id].arrival_time}`}
                   </p>
                 </div>
-                <div className="grid grid-cols-1 sm:flex gap-2 w-full sm:w-auto">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full lg:w-auto">
                   <button 
                     onClick={() => handleStatusChange(child.id, 'early')}
                     disabled={isTimeExpired}
-                    className={`px-4 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${
+                    className={`px-4 py-2.5 sm:py-3 rounded-xl font-black text-[9px] sm:text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all border ${
                       attendance[child.id]?.status === 'early' 
-                        ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' 
-                        : isTimeExpired ? 'bg-slate-100 text-slate-300 border-transparent cursor-not-allowed' : 'bg-slate-50 text-brand-muted border border-brand-border hover:bg-white'
+                        ? 'bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-500/20' 
+                        : isTimeExpired ? 'bg-slate-100 text-slate-300 border-transparent cursor-not-allowed' : 'bg-slate-50 text-brand-muted border-brand-border hover:bg-white'
                     }`}
                   >
-                    <CheckCircle2 size={14} /> 9 gacha keldi
+                    <CheckCircle2 size={14} className="shrink-0" /> <span className="truncate">9 gacha keldi</span>
                   </button>
                   <button 
                     onClick={() => handleStatusChange(child.id, 'late')}
                     disabled={isTimeExpired}
-                    className={`px-4 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${
+                    className={`px-4 py-2.5 sm:py-3 rounded-xl font-black text-[9px] sm:text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all border ${
                       attendance[child.id]?.status === 'late' 
-                        ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20' 
-                        : isTimeExpired ? 'bg-slate-100 text-slate-300 border-transparent cursor-not-allowed' : 'bg-slate-50 text-brand-muted border border-brand-border hover:bg-white'
+                        ? 'bg-amber-500 text-white border-amber-500 shadow-lg shadow-amber-500/20' 
+                        : isTimeExpired ? 'bg-slate-100 text-slate-300 border-transparent cursor-not-allowed' : 'bg-slate-50 text-brand-muted border-brand-border hover:bg-white'
                     }`}
                   >
-                    <LucideClock size={14} /> 9 dan keyin keladi
+                    <LucideClock size={14} className="shrink-0" /> <span className="truncate">9 dan keyin</span>
                   </button>
                   <button 
                     onClick={() => handleStatusChange(child.id, 'absent')}
                     disabled={isTimeExpired}
-                    className={`px-4 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${
+                    className={`px-4 py-2.5 sm:py-3 rounded-xl font-black text-[9px] sm:text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all border ${
                       attendance[child.id]?.status === 'absent' 
-                        ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/20' 
-                        : isTimeExpired ? 'bg-slate-100 text-slate-300 border-transparent cursor-not-allowed' : 'bg-slate-50 text-brand-muted border border-brand-border hover:bg-white'
+                        ? 'bg-rose-500 text-white border-rose-500 shadow-lg shadow-rose-500/20' 
+                        : isTimeExpired ? 'bg-slate-100 text-slate-300 border-transparent cursor-not-allowed' : 'bg-slate-50 text-brand-muted border-brand-border hover:bg-white'
                     }`}
                   >
-                    <XCircle size={14} /> Umuman kelmaydi
+                    <XCircle size={14} className="shrink-0" /> <span className="truncate">Kelmaydi</span>
                   </button>
                 </div>
               </div>

@@ -34,38 +34,38 @@ export const ChecklistItem: React.FC<ChecklistItemProps> = ({ id, question, onSt
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`bg-white p-8 rounded-[2rem] border-2 transition-all duration-300 shadow-sm ${
+      className={`bg-white p-4 sm:p-8 rounded-2xl sm:rounded-[2rem] border-2 transition-all duration-300 shadow-sm ${
         status === 'normal' ? 'border-emerald-500 shadow-emerald-500/5' : 
         status === 'problem' ? 'border-red-500 shadow-red-500/5' : 
         'border-slate-100 hover:border-slate-200'
       }`}
     >
-      <div className="flex flex-col md:flex-row justify-between items-start gap-6">
-        <div className="flex gap-4 flex-1">
-          <span className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black shrink-0 transition-colors ${
+      <div className="flex flex-col md:flex-row justify-between items-start gap-4 sm:gap-6">
+        <div className="flex gap-3 sm:gap-4 flex-1 min-w-0">
+          <span className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center text-xs sm:text-sm font-black shrink-0 transition-colors ${
             status === 'normal' ? 'bg-emerald-500 text-white' : 
             status === 'problem' ? 'bg-red-500 text-white' : 
             'bg-slate-100 text-slate-500'
           }`}>
             {id.toString().padStart(2, '0')}
           </span>
-          <div className="pt-2">
-            <h4 className="font-bold text-slate-800 text-lg leading-tight">{question}</h4>
+          <div className="pt-1 sm:pt-2 min-w-0">
+            <h4 className="font-bold text-slate-800 text-sm sm:text-lg leading-tight break-words">{question}</h4>
             {status && (
-              <span className={`inline-flex items-center gap-1 mt-2 text-[10px] font-black uppercase tracking-wider ${
+              <span className={`inline-flex items-center gap-1 mt-1 sm:mt-2 text-[8px] sm:text-[10px] font-black uppercase tracking-wider ${
                 status === 'normal' ? 'text-emerald-600' : 'text-red-600'
               }`}>
-                {status === 'normal' ? <Check size={12} /> : <AlertTriangle size={12} />}
+                {status === 'normal' ? <Check size={10} className="sm:size-[12px]" /> : <AlertTriangle size={10} className="sm:size-[12px]" />}
                 {status === 'normal' ? "Me'yorda" : 'Muammo aniqlandi'}
               </span>
             )}
           </div>
         </div>
         
-        <div className="flex bg-slate-50 p-1.5 rounded-2xl w-full md:w-auto shadow-inner">
+        <div className="flex bg-slate-50 p-1 rounded-xl sm:rounded-2xl w-full md:w-auto shadow-inner">
           <button 
             onClick={() => handleStatusUpdate('normal')}
-            className={`flex-1 md:flex-none px-8 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all ${
+            className={`flex-1 md:flex-none px-4 sm:px-8 py-2 sm:py-3 rounded-lg sm:rounded-xl font-black text-[10px] sm:text-xs uppercase tracking-widest transition-all ${
               status === 'normal' ? 'bg-white text-emerald-600 shadow-md' : 'text-slate-500 hover:text-slate-800'
             }`}
           >
@@ -73,7 +73,7 @@ export const ChecklistItem: React.FC<ChecklistItemProps> = ({ id, question, onSt
           </button>
           <button 
             onClick={() => handleStatusUpdate('problem')}
-            className={`flex-1 md:flex-none px-8 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all ${
+            className={`flex-1 md:flex-none px-4 sm:px-8 py-2 sm:py-3 rounded-lg sm:rounded-xl font-black text-[10px] sm:text-xs uppercase tracking-widest transition-all ${
               status === 'problem' ? 'bg-white text-red-600 shadow-md' : 'text-slate-500 hover:text-red-600'
             }`}
           >
@@ -90,23 +90,23 @@ export const ChecklistItem: React.FC<ChecklistItemProps> = ({ id, question, onSt
             exit={{ height: 0, opacity: 0 }}
             className="overflow-hidden"
           >
-            <div className="mt-8 pt-8 border-t border-slate-100 grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="mt-6 sm:mt-8 pt-6 sm:pt-8 border-t border-slate-100 grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
               <div className="space-y-4">
                 <div>
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block flex items-center gap-2">
-                    <MessageSquare size={14} /> Muammo tavsifi (majburiy)
+                  <label className="text-[8px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block flex items-center gap-2">
+                    <MessageSquare size={12} className="sm:size-[14px]" /> Muammo tavsifi (majburiy)
                   </label>
                   <textarea 
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
-                    className="w-full p-4 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-red-500/5 focus:border-red-500 outline-none transition-all text-sm font-medium resize-none" 
+                    className="w-full p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-200 focus:ring-4 focus:ring-red-500/5 focus:border-red-500 outline-none transition-all text-xs sm:text-sm font-medium resize-none" 
                     placeholder="Vaziyatni batafsil tushuntiring..." 
                     rows={4}
                   />
                 </div>
 
                 <div>
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">
+                  <label className="text-[8px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">
                     Jiddiylik darajasi
                   </label>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -114,7 +114,7 @@ export const ChecklistItem: React.FC<ChecklistItemProps> = ({ id, question, onSt
                       <button
                         key={level.id}
                         onClick={() => setSeverity(level.id)}
-                        className={`py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
+                        className={`py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-[8px] sm:text-[10px] font-black uppercase tracking-widest border transition-all ${
                           severity === level.id 
                             ? level.color + ' shadow-sm' 
                             : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
@@ -128,39 +128,39 @@ export const ChecklistItem: React.FC<ChecklistItemProps> = ({ id, question, onSt
               </div>
 
               <div className="space-y-4">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block flex items-center gap-2">
-                  <ImageIcon size={14} /> Dalil uchun rasm (majburiy)
+                <label className="text-[8px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block flex items-center gap-2">
+                  <ImageIcon size={12} className="sm:size-[14px]" /> Dalil uchun rasm (majburiy)
                 </label>
                 
                 {image ? (
-                  <div className="relative aspect-video rounded-3xl overflow-hidden border-2 border-red-100 group">
+                  <div className="relative aspect-video rounded-2xl sm:rounded-3xl overflow-hidden border-2 border-red-100 group">
                     <img src={image} alt="Evidence" className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                    <div className="absolute inset-0 bg-black/40 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
                       <button 
                         onClick={() => fileInputRef.current?.click()}
-                        className="p-3 bg-white/20 backdrop-blur-md rounded-2xl text-white hover:bg-white/40 transition-all"
+                        className="p-2 sm:p-3 bg-white/20 backdrop-blur-md rounded-xl sm:rounded-2xl text-white hover:bg-white/40 transition-all"
                       >
-                        <Camera size={20} />
+                        <Camera size={18} className="sm:size-[20px]" />
                       </button>
                       <button 
                         onClick={() => setImage(null)}
-                        className="p-3 bg-red-500 rounded-2xl text-white hover:bg-red-600 transition-all"
+                        className="p-2 sm:p-3 bg-red-500 rounded-xl sm:rounded-2xl text-white hover:bg-red-600 transition-all"
                       >
-                        <Trash2 size={20} />
+                        <Trash2 size={18} className="sm:size-[20px]" />
                       </button>
                     </div>
                   </div>
                 ) : (
                   <button 
                     onClick={() => fileInputRef.current?.click()}
-                    className="w-full aspect-video border-2 border-dashed border-slate-200 rounded-3xl flex flex-col items-center justify-center gap-4 text-slate-400 hover:border-red-400 hover:text-red-500 hover:bg-red-50/30 transition-all group"
+                    className="w-full aspect-video border-2 border-dashed border-slate-200 rounded-2xl sm:rounded-3xl flex flex-col items-center justify-center gap-3 sm:gap-4 text-slate-400 hover:border-red-400 hover:text-red-500 hover:bg-red-50/30 transition-all group"
                   >
-                    <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center group-hover:bg-red-100 transition-colors">
-                      <Camera size={32} />
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 bg-slate-50 rounded-xl sm:rounded-2xl flex items-center justify-center group-hover:bg-red-100 transition-colors">
+                      <Camera size={24} className="sm:size-[32px]" />
                     </div>
                     <div className="text-center">
-                      <p className="font-black text-xs uppercase tracking-widest">Rasm yuklash</p>
-                      <p className="text-[10px] font-medium mt-1">Kamera yoki galereyadan tanlang</p>
+                      <p className="font-black text-[10px] sm:text-xs uppercase tracking-widest">Rasm yuklash</p>
+                      <p className="text-[8px] sm:text-[10px] font-medium mt-1">Kamera yoki galereyadan tanlang</p>
                     </div>
                   </button>
                 )}

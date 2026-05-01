@@ -219,56 +219,56 @@ const OperatorView: React.FC<OperatorViewProps> = ({ groups: initialGroups, setG
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-700">
-      <div className="flex flex-wrap items-center gap-4">
-        <button onClick={() => setViewMode('ADD_CHILD')} className="bg-brand-primary text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-brand-primary/20 hover:scale-105 transition-transform"><Plus size={18}/> Yangi bola</button>
-        <button onClick={() => setViewMode('ADD_STAFF')} className="bg-white text-brand-depth border border-brand-border px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-slate-50 transition-colors"><Plus size={18}/> Yangi xodim</button>
-        <button onClick={() => setViewMode('MANAGE_CHILDREN')} className="bg-white text-brand-depth border border-brand-border px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-slate-50 transition-colors"><Users size={18}/> Bolalar</button>
-        <button onClick={() => setViewMode('MANAGE_STAFF')} className="bg-white text-brand-depth border border-brand-border px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-slate-50 transition-colors"><UserCircle size={18}/> Xodimlar</button>
-        <button onClick={() => setViewMode('MANAGE_GROUPS')} className="bg-white text-brand-depth border border-brand-border px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-slate-50 transition-colors"><Package size={18}/> Guruhlar</button>
-        <button onClick={() => setViewMode('MANAGE_PARENTS')} className="bg-white text-brand-depth border border-brand-border px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-slate-50 transition-colors"><ShieldCheck size={18}/> Ota-onalar</button>
+    <div className="space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-700">
+      <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+        <button onClick={() => setViewMode('ADD_CHILD')} className="flex-1 sm:flex-none bg-brand-primary text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-brand-primary/20 hover:scale-105 transition-transform"><Plus size={16}/> Yangi bola</button>
+        <button onClick={() => setViewMode('ADD_STAFF')} className="flex-1 sm:flex-none bg-white text-brand-depth border border-brand-border px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 hover:bg-slate-50 transition-colors"><Plus size={16}/> Yangi xodim</button>
+        <button onClick={() => setViewMode('MANAGE_CHILDREN')} className="flex-1 sm:flex-none bg-white text-brand-depth border border-brand-border px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 hover:bg-slate-50 transition-colors"><Users size={16}/> Bolalar</button>
+        <button onClick={() => setViewMode('MANAGE_STAFF')} className="flex-1 sm:flex-none bg-white text-brand-depth border border-brand-border px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 hover:bg-slate-50 transition-colors"><UserCircle size={16}/> Xodimlar</button>
+        <button onClick={() => setViewMode('MANAGE_GROUPS')} className="flex-1 sm:flex-none bg-white text-brand-depth border border-brand-border px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 hover:bg-slate-50 transition-colors"><Package size={16}/> Guruhlar</button>
+        <button onClick={() => setViewMode('MANAGE_PARENTS')} className="flex-1 sm:flex-none bg-white text-brand-depth border border-brand-border px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 hover:bg-slate-50 transition-colors"><ShieldCheck size={16}/> Ota-onalar</button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-xl border border-brand-border shadow-sm">
-          <div className="flex justify-between items-start mb-4">
-            <div className="p-2 bg-blue-50 text-brand-primary rounded-lg"><Users size={20} /></div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="bg-white p-4 sm:p-6 rounded-xl border border-brand-border shadow-sm">
+          <div className="flex justify-between items-start mb-3 sm:mb-4">
+            <div className="p-2 bg-blue-50 text-brand-primary rounded-lg"><Users size={18} /></div>
           </div>
-          <p className="text-brand-muted text-[11px] font-bold uppercase tracking-wider mb-1">Jami bolalar</p>
-          <h3 className="text-2xl font-bold text-brand-depth">{children.length} ta</h3>
+          <p className="text-brand-muted text-[10px] sm:text-[11px] font-bold uppercase tracking-wider mb-1">Jami bolalar</p>
+          <h3 className="text-xl sm:text-2xl font-bold text-brand-depth">{children.length} ta</h3>
         </div>
-        <div className="bg-white p-6 rounded-xl border border-brand-border shadow-sm border-l-4 border-l-brand-emerald text-brand-depth">
-          <div className="flex justify-between items-start mb-4">
-            <div className="p-2 bg-emerald-50 text-brand-emerald rounded-lg"><Package size={20} /></div>
+        <div className="bg-white p-4 sm:p-6 rounded-xl border border-brand-border shadow-sm border-l-4 border-l-brand-emerald text-brand-depth">
+          <div className="flex justify-between items-start mb-3 sm:mb-4">
+            <div className="p-2 bg-emerald-50 text-brand-emerald rounded-lg"><Package size={18} /></div>
           </div>
-          <p className="text-brand-muted text-[11px] font-bold uppercase tracking-wider mb-1">Jami guruhlar</p>
-          <h3 className="text-2xl font-bold text-brand-depth">{groups.length} ta</h3>
+          <p className="text-brand-muted text-[10px] sm:text-[11px] font-bold uppercase tracking-wider mb-1">Jami guruhlar</p>
+          <h3 className="text-xl sm:text-2xl font-bold text-brand-depth">{groups.length} ta</h3>
         </div>
-        <div className="bg-white p-6 rounded-xl border border-brand-border shadow-sm border-l-4 border-l-rose-500">
-          <div className="flex justify-between items-start mb-4">
-            <div className="p-2 bg-rose-50 text-rose-500 rounded-lg"><AlertCircle size={20} /></div>
+        <div className="bg-white p-4 sm:p-6 rounded-xl border border-brand-border shadow-sm border-l-4 border-l-rose-500">
+          <div className="flex justify-between items-start mb-3 sm:mb-4">
+            <div className="p-2 bg-rose-50 text-rose-500 rounded-lg"><AlertCircle size={18} /></div>
           </div>
-          <p className="text-brand-muted text-[11px] font-bold uppercase tracking-wider mb-1">Xatoliklar</p>
-          <h3 className="text-2xl font-bold text-brand-depth">0 ta</h3>
+          <p className="text-brand-muted text-[10px] sm:text-[11px] font-bold uppercase tracking-wider mb-1">Xatoliklar</p>
+          <h3 className="text-xl sm:text-2xl font-bold text-brand-depth">0 ta</h3>
         </div>
       </div>
 
       <OperationsLog />
 
       {viewMode !== 'DASHBOARD' && (
-        <div className="fixed inset-0 flex items-center justify-center z-[100] p-4 lg:p-12 animate-in fade-in duration-300 bg-black/5">
-           <div className="bg-slate-50 w-full max-w-6xl h-full max-h-[90vh] rounded-[10px] shadow-2xl relative overflow-hidden flex flex-col border border-white/20">
+        <div className="fixed inset-0 flex items-center justify-center z-[100] p-2 sm:p-4 lg:p-12 animate-in fade-in duration-300 bg-black/20 backdrop-blur-sm">
+           <div className="bg-slate-50 w-full max-w-6xl h-full sm:h-auto sm:max-h-[90vh] rounded-xl sm:rounded-[10px] shadow-2xl relative overflow-hidden flex flex-col border border-white/20">
 
-              <div className="absolute top-6 right-8 z-10">
+              <div className="absolute top-4 right-4 sm:top-6 sm:right-8 z-10">
                 <button 
                   onClick={() => setViewMode('DASHBOARD')}
-                  className="w-10 h-10 bg-white shadow-lg border border-brand-border rounded-full flex items-center justify-center text-brand-depth hover:bg-rose-50 hover:text-rose-500 hover:scale-110 transition-all active:scale-95 group"
+                  className="w-8 h-8 sm:w-10 sm:h-10 bg-white shadow-lg border border-brand-border rounded-full flex items-center justify-center text-brand-depth hover:bg-rose-50 hover:text-rose-500 hover:scale-110 transition-all active:scale-95 group"
                 >
-                  <span className="font-black text-xl leading-none group-hover:rotate-90 transition-transform">&times;</span>
+                  <span className="font-black text-lg sm:text-xl leading-none group-hover:rotate-90 transition-transform">&times;</span>
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto custom-scrollbar p-8 md:p-12">
+              <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-8 md:p-12">
                  {renderModalContent()}
               </div>
            </div>

@@ -136,7 +136,7 @@ export const ChefMenuDashboard: React.FC = () => {
               <ChefHat size={32} className="md:size-10" />
             </motion.div>
             <div className="space-y-1 md:space-y-2">
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-black tracking-tighter text-slate-900 italic uppercase">Oshpaz <span className="text-blue-600">Pro</span></h1>
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-black tracking-tighter text-slate-900 italic uppercase">Bog'cha <span className="text-blue-600">oshxonasi</span></h1>
               <div className="flex flex-wrap items-center gap-3 md:gap-4 text-slate-400 text-[8px] md:text-[9px] font-black uppercase tracking-[0.2em]">
                 <span className="flex items-center gap-2 font-bold text-slate-500 underline decoration-blue-500 decoration-2 underline-offset-4 tracking-[0.1em]">Porsiya va Me'yor</span>
                 <span className="hidden md:block w-1 h-1 bg-slate-200 rounded-full"></span>

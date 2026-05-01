@@ -161,27 +161,27 @@ const NurseView: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50/50 p-4 md:p-8 animate-in fade-in duration-700">
+    <div className="min-h-screen bg-slate-50/50 p-4 sm:p-8 animate-in fade-in duration-700">
       
       {/* HEADER */}
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-8 rounded-[2rem] shadow-sm border border-brand-border mb-8 gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 bg-brand-primary/10 text-brand-primary flex items-center justify-center rounded-2xl">
-            <HeartPulse size={28} />
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-6 sm:p-8 rounded-2xl sm:rounded-[2rem] shadow-sm border border-brand-border mb-6 sm:mb-8 gap-4">
+        <div className="flex items-center gap-3 sm:gap-4">
+          <div className="w-10 h-10 sm:w-14 sm:h-14 bg-brand-primary/10 text-brand-primary flex items-center justify-center rounded-xl sm:rounded-2xl">
+            <HeartPulse size={20} className="sm:w-7 sm:h-7" />
           </div>
           <div>
-            <h1 className="text-3xl font-black text-brand-depth tracking-tight">Hamshira Paneli</h1>
-            <p className="text-brand-muted text-xs font-black uppercase tracking-widest mt-1">Bugungi sog'liq monitoringi</p>
+            <h1 className="text-xl sm:text-3xl font-black text-brand-depth tracking-tight">Hamshira Paneli</h1>
+            <p className="text-brand-muted text-[10px] font-black uppercase tracking-widest mt-0.5 sm:mt-1">Bugungi sog'liq monitoringi</p>
           </div>
         </div>
-        <div className="flex items-center gap-6">
-          <div className="text-right hidden md:block">
-            <p className="text-brand-depth font-bold">{currentDate}</p>
-            <p className="text-brand-muted text-[10px] font-black uppercase tracking-widest">Tizim vaqti</p>
+        <div className="flex items-center gap-4 sm:gap-6">
+          <div className="text-right hidden sm:block">
+            <p className="text-brand-depth text-sm font-bold">{currentDate}</p>
+            <p className="text-brand-muted text-[9px] font-black uppercase tracking-widest">Tizim vaqti</p>
           </div>
-          <div className="px-4 py-2 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-100 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span className="text-[10px] font-black uppercase tracking-widest">Real-time</span>
+          <div className="px-3 py-1.5 sm:px-4 sm:py-2 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-100 flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span className="text-[9px] font-black uppercase tracking-widest">Real-time</span>
           </div>
         </div>
       </header>
@@ -189,53 +189,53 @@ const NurseView: React.FC = () => {
       {/* DASHBOARD VIEW */}
       <AnimatePresence mode="wait">
         {viewMode === 'DASHBOARD' && (
-          <motion.div key="dashboard" initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-20}} className="space-y-8">
+          <motion.div key="dashboard" initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-20}} className="space-y-6 sm:space-y-8">
             
             {/* KPI CARDS */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              <div className="bg-white p-6 rounded-[1.5rem] border border-brand-border shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="w-10 h-10 bg-blue-50 text-blue-500 rounded-xl flex items-center justify-center"><Users size={20}/></div>
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+              <div className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-[1.5rem] border border-brand-border shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+                <div className="flex justify-between items-start mb-2 sm:mb-4">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-50 text-blue-500 rounded-lg sm:rounded-xl flex items-center justify-center"><Users size={16} className="sm:w-5 sm:h-5"/></div>
                 </div>
                 <div>
-                  <p className="text-[10px] font-black text-brand-muted uppercase tracking-widest mb-1">Jami bolalar</p>
-                  <p className="text-3xl font-black text-brand-depth">{stats.total}</p>
+                  <p className="text-[8px] sm:text-[10px] font-black text-brand-muted uppercase tracking-wider sm:tracking-widest mb-1">Jami bolalar</p>
+                  <p className="text-xl sm:text-3xl font-black text-brand-depth">{stats.total}</p>
                 </div>
               </div>
-              <div className="bg-white p-6 rounded-[1.5rem] border border-brand-border shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="w-10 h-10 bg-emerald-50 text-emerald-500 rounded-xl flex items-center justify-center"><ShieldCheck size={20}/></div>
+              <div className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-[1.5rem] border border-brand-border shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+                <div className="flex justify-between items-start mb-2 sm:mb-4">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-emerald-50 text-emerald-500 rounded-lg sm:rounded-xl flex items-center justify-center"><ShieldCheck size={16} className="sm:w-5 sm:h-5"/></div>
                 </div>
                 <div>
-                  <p className="text-[10px] font-black text-brand-muted uppercase tracking-widest mb-1">1-3 yosh</p>
-                  <p className="text-3xl font-black text-brand-depth">{stats.age1_3}</p>
+                  <p className="text-[8px] sm:text-[10px] font-black text-brand-muted uppercase tracking-wider sm:tracking-widest mb-1">1-3 yosh</p>
+                  <p className="text-xl sm:text-3xl font-black text-brand-depth">{stats.age1_3}</p>
                 </div>
               </div>
-              <div className="bg-white p-6 rounded-[1.5rem] border border-brand-border shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="w-10 h-10 bg-indigo-50 text-indigo-500 rounded-xl flex items-center justify-center"><Activity size={20}/></div>
+              <div className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-[1.5rem] border border-brand-border shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+                <div className="flex justify-between items-start mb-2 sm:mb-4">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-indigo-50 text-indigo-500 rounded-lg sm:rounded-xl flex items-center justify-center"><Activity size={16} className="sm:w-5 sm:h-5"/></div>
                 </div>
                 <div>
-                  <p className="text-[10px] font-black text-brand-muted uppercase tracking-widest mb-1">3-7 yosh</p>
-                  <p className="text-3xl font-black text-brand-depth">{stats.age3_7}</p>
+                  <p className="text-[8px] sm:text-[10px] font-black text-brand-muted uppercase tracking-wider sm:tracking-widest mb-1">3-7 yosh</p>
+                  <p className="text-xl sm:text-3xl font-black text-brand-depth">{stats.age3_7}</p>
                 </div>
               </div>
-              <div className="bg-white p-6 rounded-[1.5rem] border border-brand-border shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="w-10 h-10 bg-rose-50 text-rose-500 rounded-xl flex items-center justify-center"><AlertTriangle size={20}/></div>
+              <div className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-[1.5rem] border border-brand-border shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+                <div className="flex justify-between items-start mb-2 sm:mb-4">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-rose-50 text-rose-500 rounded-lg sm:rounded-xl flex items-center justify-center"><AlertTriangle size={16} className="sm:w-5 sm:h-5"/></div>
                 </div>
                 <div>
-                  <p className="text-[10px] font-black text-brand-muted uppercase tracking-widest mb-1">Kasal bolalar</p>
-                  <p className="text-3xl font-black text-rose-500">{stats.sickCount}</p>
+                  <p className="text-[8px] sm:text-[10px] font-black text-brand-muted uppercase tracking-wider sm:tracking-widest mb-1">Kasal bolalar</p>
+                  <p className="text-xl sm:text-3xl font-black text-rose-500">{stats.sickCount}</p>
                 </div>
               </div>
-              <div className="bg-white p-6 rounded-[1.5rem] border border-brand-border shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="w-10 h-10 bg-amber-50 text-amber-500 rounded-xl flex items-center justify-center"><Thermometer size={20}/></div>
+              <div className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-[1.5rem] border border-brand-border shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow col-span-2 lg:col-span-1">
+                <div className="flex justify-between items-start mb-2 sm:mb-4">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-amber-50 text-amber-500 rounded-lg sm:rounded-xl flex items-center justify-center"><Thermometer size={16} className="sm:w-5 sm:h-5"/></div>
                 </div>
                 <div>
-                  <p className="text-[10px] font-black text-brand-muted uppercase tracking-widest mb-1">Allergiyasi bor</p>
-                  <p className="text-3xl font-black text-amber-500">{stats.allergyCount}</p>
+                  <p className="text-[8px] sm:text-[10px] font-black text-brand-muted uppercase tracking-wider sm:tracking-widest mb-1">Allergiyasi bor</p>
+                  <p className="text-xl sm:text-3xl font-black text-amber-500">{stats.allergyCount}</p>
                 </div>
               </div>
             </div>

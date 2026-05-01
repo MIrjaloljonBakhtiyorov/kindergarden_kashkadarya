@@ -32,5 +32,5 @@ db.serialize(() => {
       console.log('Bolaning guruhi aniqlanmadi');
       db.close();
     }
-  });
+  }); 
 });

@@ -3,7 +3,10 @@ import { z } from 'zod';
 export const childFormSchema = z.object({
   first_name: z.string().min(2, "Ism kiritilishi shart"),
   last_name: z.string().min(2, "Otasining ismi kiritilishi shart"),
-  birth_date: z.string().min(1, "Tug'ilgan sana kiritilishi shart"),
+  birth_date: z.string().min(1, "Tug'ilgan sana kiritilishi shart").refine((val) => {
+    const year = new Date(val).getFullYear();
+    return year >= 1970 && year <= 2040;
+  }, "Sana 1970 va 2040 yillar oralig'ida bo'lishi kerak"),
   age_category: z.string().min(1, "Yosh kategoriyasi kiritilishi shart"),
   gender: z.enum(["M", "F"], { message: "Jinsi tanlanishi shart" } as any),
   address: z.string().min(1, "Manzil kiritilishi shart"),
@@ -22,6 +25,7 @@ export const childFormSchema = z.object({
   mother_phone: z.string().min(7, "Telefon raqami kiritilishi shart"),
   mother_passport: z.string().optional(),
   group_id: z.string().min(1, "Guruh tanlanishi shart"),
+  parent_login: z.string().min(3, "Login kamida 3 ta belgidan iborat bo'lishi kerak").optional(),
   status: z.enum(["DRAFT", "PENDING", "ACTIVE"]).optional(),
 });
 

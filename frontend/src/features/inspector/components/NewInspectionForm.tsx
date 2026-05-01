@@ -128,38 +128,38 @@ export const NewInspectionForm: React.FC<NewInspectionFormProps> = ({ onCancel, 
   }
 
   return (
-    <div className="flex flex-col lg:flex-row h-[calc(100vh-120px)] -m-8 overflow-hidden bg-white">
+    <div className="flex flex-col lg:flex-row h-full lg:h-[calc(100vh-120px)] -m-4 sm:-m-8 overflow-hidden bg-white">
       {/* Left Panel - Category Selector */}
-      <div className="lg:w-[350px] border-r border-slate-100 flex flex-col bg-slate-50/50">
-        <div className="p-8 border-b border-slate-100 bg-white">
+      <div className="w-full lg:w-[350px] border-b lg:border-b-0 lg:border-r border-slate-100 flex flex-col bg-slate-50/50 max-h-[40vh] lg:max-h-full">
+        <div className="p-6 sm:p-8 border-b border-slate-100 bg-white">
           <button 
             onClick={onCancel}
-            className="flex items-center gap-2 text-slate-400 font-bold text-xs uppercase tracking-widest hover:text-blue-600 transition-colors mb-6"
+            className="flex items-center gap-2 text-slate-400 font-bold text-[10px] sm:text-xs uppercase tracking-widest hover:text-blue-600 transition-colors mb-4 sm:mb-6"
           >
-            <ArrowLeft size={16} /> Orqaga qaytish
+            <ArrowLeft size={14} /> Orqaga qaytish
           </button>
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-1">Obyekt va Yo'nalish</h2>
-          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Audit yo'nalishini tanlang</p>
+          <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mb-1">Obyekt va Yo'nalish</h2>
+          <p className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-widest">Audit yo'nalishini tanlang</p>
         </div>
         
-        <div className="flex-1 overflow-y-auto p-6 space-y-3">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-2 sm:space-y-3 custom-scrollbar">
           {INSPECTION_CATEGORIES.map((cat) => (
             <button
               key={cat.id}
               onClick={() => setActiveCategory(cat.id)}
-              className={`w-full p-4 rounded-3xl border-2 transition-all flex items-center gap-4 group relative ${
+              className={`w-full p-3 sm:p-4 rounded-2xl sm:rounded-3xl border-2 transition-all flex items-center gap-3 sm:gap-4 group relative ${
                 activeCategory === cat.id 
                   ? 'bg-white border-blue-500 shadow-lg shadow-blue-500/5' 
                   : 'bg-transparent border-transparent hover:bg-white hover:border-slate-200'
               }`}
             >
-              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${
+              <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all shrink-0 ${
                 activeCategory === cat.id ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-500 group-hover:bg-blue-50 group-hover:text-blue-600'
               }`}>
-                <cat.icon size={22} />
+                <cat.icon size={18} className="sm:size-[22px]" />
               </div>
-              <div className="text-left flex-1">
-                <p className={`font-black text-sm uppercase tracking-tight ${activeCategory === cat.id ? 'text-slate-900' : 'text-slate-500'}`}>
+              <div className="text-left flex-1 min-w-0">
+                <p className={`font-black text-xs sm:text-sm uppercase tracking-tight truncate ${activeCategory === cat.id ? 'text-slate-900' : 'text-slate-500'}`}>
                   {cat.name}
                 </p>
                 <div className="flex items-center gap-2 mt-1">
@@ -169,19 +169,19 @@ export const NewInspectionForm: React.FC<NewInspectionFormProps> = ({ onCancel, 
                       style={{ width: `${categoryProgress[cat.id]}%` }}
                     />
                   </div>
-                  <span className="text-[9px] font-black text-slate-400">{categoryProgress[cat.id]}%</span>
+                  <span className="text-[8px] sm:text-[9px] font-black text-slate-400">{categoryProgress[cat.id]}%</span>
                 </div>
               </div>
               {categoryProgress[cat.id] === 100 && (
-                <div className="absolute top-2 right-2 w-5 h-5 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-sm">
-                  <CheckCircle2 size={12} />
+                <div className="absolute top-2 right-2 w-4 h-4 sm:w-5 sm:h-5 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-sm">
+                  <CheckCircle2 size={10} className="sm:size-[12px]" />
                 </div>
               )}
             </button>
           ))}
         </div>
 
-        <div className="p-8 border-t border-slate-100 bg-white">
+        <div className="p-6 sm:p-8 border-t border-slate-100 bg-white hidden lg:block">
           <div className="flex justify-between items-center mb-3">
             <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Umumiy progress</span>
             <span className="text-sm font-black text-blue-600">{totalProgress}%</span>
@@ -197,18 +197,18 @@ export const NewInspectionForm: React.FC<NewInspectionFormProps> = ({ onCancel, 
       </div>
 
       {/* Right Panel - Checklist Engine */}
-      <div className="flex-1 flex flex-col bg-white">
-        <div className="p-8 border-b border-slate-50 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-4">
+      <div className="flex-1 flex flex-col bg-white overflow-hidden">
+        <div className="p-6 sm:p-8 border-b border-slate-50 flex items-center justify-between shrink-0">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3 sm:gap-4 truncate">
               {currentCategory?.name}
-              <span className="px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-black rounded-lg uppercase tracking-widest border border-blue-100">
+              <span className="px-2 py-0.5 sm:px-3 sm:py-1 bg-blue-50 text-blue-600 text-[8px] sm:text-[10px] font-black rounded-lg uppercase tracking-widest border border-blue-100 shrink-0">
                 FAOL
               </span>
             </h1>
-            <p className="text-slate-500 font-medium mt-1">Rasmiy tekshiruv varaqasi va monitoring</p>
+            <p className="text-slate-500 text-[10px] sm:text-sm font-medium mt-1 truncate">Rasmiy tekshiruv varaqasi va monitoring</p>
           </div>
-          <div className="hidden md:flex items-center gap-6">
+          <div className="hidden md:flex items-center gap-6 shrink-0">
             <div className="flex items-center gap-2">
               <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400">
                 <FileCheck size={20} />
@@ -224,14 +224,14 @@ export const NewInspectionForm: React.FC<NewInspectionFormProps> = ({ onCancel, 
               </div>
               <div className="text-left">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Sana</p>
-                <p className="text-xs font-bold text-slate-700 leading-none">29.04.2026</p>
+                <p className="text-xs font-bold text-slate-700 leading-none">{new Date().toLocaleDateString('uz-UZ')}</p>
               </div>
             </div>
           </div>
         </div>
         
-        <div className="flex-1 overflow-y-auto p-10 bg-slate-50/30">
-          <div className="max-w-4xl mx-auto space-y-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-10 bg-slate-50/30 custom-scrollbar">
+          <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
             <AnimatePresence mode="wait">
               {activeCategory === 'FOOD_CONSUMPTION' ? (
                 <motion.div
@@ -251,7 +251,7 @@ export const NewInspectionForm: React.FC<NewInspectionFormProps> = ({ onCancel, 
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
-                  className="space-y-6"
+                  className="space-y-4 sm:space-y-6"
                 >
                   {currentCategory?.questions.map((q, i) => (
                     <ChecklistItem 
@@ -268,27 +268,27 @@ export const NewInspectionForm: React.FC<NewInspectionFormProps> = ({ onCancel, 
         </div>
 
         {/* Footer Actions */}
-        <div className="p-8 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-6 bg-white">
-          <div className="flex items-center gap-4">
-            <div className={`w-12 h-12 rounded-[1.25rem] flex items-center justify-center transition-colors ${
+        <div className="p-6 sm:p-8 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6 bg-white shrink-0">
+          <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
+            <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-[1.25rem] flex items-center justify-center transition-colors shrink-0 ${
               canSubmit ? 'bg-emerald-100 text-emerald-600' : 'bg-blue-100 text-blue-600'
             }`}>
-              {canSubmit ? <CheckCircle2 size={24} /> : <AlertTriangle size={24} />}
+              {canSubmit ? <CheckCircle2 size={20} className="sm:size-[24px]" /> : <AlertTriangle size={20} className="sm:size-[24px]" />}
             </div>
-            <div>
-              <p className="text-sm font-black text-slate-900 uppercase tracking-tight">
+            <div className="min-w-0">
+              <p className="text-xs sm:text-sm font-black text-slate-900 uppercase tracking-tight truncate">
                 {canSubmit ? "Hisobotni yuborish mumkin" : "Ma'lumotlar kiritilmoqda"}
               </p>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+              <p className="text-[8px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-widest">
                 {totalProgress === 100 ? "Barcha bandlar yakunlandi" : `Progress: ${totalProgress}%`}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
             <button 
               onClick={onCancel}
-              className="flex-1 sm:flex-none px-8 py-4 rounded-[1.25rem] font-black text-xs uppercase tracking-widest text-slate-500 hover:bg-slate-50 transition-all"
+              className="flex-1 sm:flex-none px-4 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-[1.25rem] font-black text-[10px] sm:text-xs uppercase tracking-widest text-slate-500 hover:bg-slate-50 transition-all border border-slate-100 sm:border-transparent"
             >
               Bekor qilish
             </button>
@@ -297,13 +297,13 @@ export const NewInspectionForm: React.FC<NewInspectionFormProps> = ({ onCancel, 
               whileTap={canSubmit ? { scale: 0.98 } : {}}
               onClick={handleSubmit}
               disabled={!canSubmit}
-              className={`flex-1 sm:flex-none px-12 py-4 rounded-[1.25rem] font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-all ${
+              className={`flex-[2] sm:flex-none px-6 sm:px-12 py-3 sm:py-4 rounded-xl sm:rounded-[1.25rem] font-black text-[10px] sm:text-xs uppercase tracking-[0.1em] sm:tracking-[0.2em] flex items-center justify-center gap-2 sm:gap-3 transition-all ${
                 canSubmit 
                   ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/20 hover:bg-blue-700' 
                   : 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
               }`}
             >
-              HISOBOTNI YUBORISH <Send size={18} />
+              YUBORISH <Send size={16} className="sm:size-[18px]" />
             </motion.button>
           </div>
         </div>

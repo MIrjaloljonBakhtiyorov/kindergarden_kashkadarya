@@ -52,31 +52,31 @@ export const InspectorCalendar: React.FC<InspectorCalendarProps> = ({ audits, on
   };
 
   return (
-    <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden">
-      <div className="p-8 bg-slate-900 text-white flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/20">
-            <CalendarIcon size={24} />
+    <div className="bg-white rounded-2xl sm:rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden">
+      <div className="p-6 sm:p-8 bg-slate-900 text-white flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-3 sm:gap-4">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-600 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/20 shrink-0">
+            <CalendarIcon size={20} className="sm:size-[24px]" />
           </div>
           <div>
-            <h3 className="text-2xl font-black uppercase tracking-tight">{monthNames[month]} {year}</h3>
-            <p className="text-blue-400 text-[10px] font-black uppercase tracking-widest">Auditlar Taqvimi</p>
+            <h3 className="text-xl sm:text-2xl font-black uppercase tracking-tight">{monthNames[month]} {year}</h3>
+            <p className="text-blue-400 text-[8px] sm:text-[10px] font-black uppercase tracking-widest">Auditlar Taqvimi</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={prevMonth} className="p-3 hover:bg-white/10 rounded-xl transition-colors"><ChevronLeft size={20} /></button>
-          <button onClick={nextMonth} className="p-3 hover:bg-white/10 rounded-xl transition-colors"><ChevronRight size={20} /></button>
+          <button onClick={prevMonth} className="p-2 sm:p-3 hover:bg-white/10 rounded-lg sm:rounded-xl transition-colors"><ChevronLeft size={18} className="sm:size-[20px]" /></button>
+          <button onClick={nextMonth} className="p-2 sm:p-3 hover:bg-white/10 rounded-lg sm:rounded-xl transition-colors"><ChevronRight size={18} className="sm:size-[20px]" /></button>
         </div>
       </div>
 
-      <div className="p-8">
-        <div className="grid grid-cols-7 gap-4 mb-6">
+      <div className="p-4 sm:p-8">
+        <div className="grid grid-cols-7 gap-2 sm:gap-4 mb-4 sm:mb-6">
           {['Du', 'Se', 'Cho', 'Pa', 'Ju', 'Sha', 'Ya'].map(d => (
-            <div key={d} className="text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">{d}</div>
+            <div key={d} className="text-center text-[8px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest">{d}</div>
           ))}
         </div>
 
-        <div className="grid grid-cols-7 gap-4">
+        <div className="grid grid-cols-7 gap-2 sm:gap-4">
           {days.map((day, idx) => {
             if (day === null) return <div key={`empty-${idx}`} />;
             
@@ -90,19 +90,19 @@ export const InspectorCalendar: React.FC<InspectorCalendarProps> = ({ audits, on
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => onDateSelect(`${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`)}
-                className={`aspect-square rounded-2xl border-2 flex flex-col items-center justify-center gap-1 transition-all relative ${
+                className={`aspect-square rounded-xl sm:rounded-2xl border-2 flex flex-col items-center justify-center gap-0.5 sm:gap-1 transition-all relative ${
                   dateAudits.length > 0 
                     ? 'border-blue-100 bg-blue-50/30' 
                     : 'border-slate-50 hover:border-slate-100'
                 }`}
               >
-                <span className={`text-lg font-black ${dateAudits.length > 0 ? 'text-blue-600' : 'text-slate-400'}`}>{day}</span>
+                <span className={`text-sm sm:text-lg font-black ${dateAudits.length > 0 ? 'text-blue-600' : 'text-slate-400'}`}>{day}</span>
                 <div className="flex gap-0.5">
-                  {hasPass && <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />}
-                  {hasFail && <div className="w-1.5 h-1.5 bg-red-500 rounded-full" />}
+                  {hasPass && <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-emerald-500 rounded-full" />}
+                  {hasFail && <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-red-500 rounded-full" />}
                 </div>
                 {dateAudits.length > 0 && (
-                  <span className="absolute -top-2 -right-2 w-5 h-5 bg-blue-600 text-white text-[10px] font-black rounded-full flex items-center justify-center shadow-md">
+                  <span className="absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2 w-4 h-4 sm:w-5 sm:h-5 bg-blue-600 text-white text-[8px] sm:text-[10px] font-black rounded-full flex items-center justify-center shadow-md">
                     {dateAudits.length}
                   </span>
                 )}
@@ -112,18 +112,18 @@ export const InspectorCalendar: React.FC<InspectorCalendarProps> = ({ audits, on
         </div>
       </div>
 
-      <div className="p-8 bg-slate-50 border-t border-slate-100 flex gap-8">
+      <div className="p-4 sm:p-8 bg-slate-50 border-t border-slate-100 flex flex-wrap gap-4 sm:gap-8 justify-center sm:justify-start">
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-emerald-500 rounded-full" />
-          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Muvaffaqiyatli</span>
+          <div className="w-2 h-2 sm:w-3 sm:h-3 bg-emerald-500 rounded-full" />
+          <span className="text-[8px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-wider">Muvaffaqiyatli</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-red-500 rounded-full" />
-          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Kamchiliklar bilan</span>
+          <div className="w-2 h-2 sm:w-3 sm:h-3 bg-red-500 rounded-full" />
+          <span className="text-[8px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-wider">Kamchiliklar</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-blue-600 rounded-full" />
-          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Audit o'tkazilgan</span>
+          <div className="w-2 h-2 sm:w-3 sm:h-3 bg-blue-600 rounded-full" />
+          <span className="text-[8px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-wider">O'tkazilgan</span>
         </div>
       </div>
     </div>

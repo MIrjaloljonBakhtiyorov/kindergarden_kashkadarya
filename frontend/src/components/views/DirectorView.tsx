@@ -11,19 +11,19 @@ import apiClient from '../../api/apiClient';
 import { OperationsLog } from '../../features/operations/components/OperationsLog';
 
 const KPICard = ({ title, value, change, trend, icon: Icon, color }: any) => (
-  <div className="bg-white p-6 rounded-xl border border-brand-border shadow-sm hover:shadow-md transition-all duration-300">
-    <div className="flex items-start justify-between mb-4">
-      <div className={`p-3 rounded-lg ${color} bg-opacity-10`}>
-        <Icon className={color.replace('bg-', 'text-')} size={20} />
+  <div className="bg-white p-4 sm:p-6 rounded-xl border border-brand-border shadow-sm hover:shadow-md transition-all duration-300">
+    <div className="flex items-start justify-between mb-3 sm:mb-4">
+      <div className={`p-2 sm:p-3 rounded-lg ${color} bg-opacity-10`}>
+        <Icon className={`${color.replace('bg-', 'text-')} sm:w-5 sm:h-5`} size={18} />
       </div>
-      <div className={`flex items-center gap-1 font-bold text-xs ${trend === 'up' ? 'text-brand-emerald' : 'text-rose-500'}`}>
-        {trend === 'up' ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+      <div className={`flex items-center gap-1 font-bold text-[10px] sm:text-xs ${trend === 'up' ? 'text-brand-emerald' : 'text-rose-500'}`}>
+        {trend === 'up' ? <TrendingUp size={10} className="sm:w-3 sm:h-3" /> : <TrendingDown size={10} className="sm:w-3 sm:h-3" />}
         {change}%
       </div>
     </div>
-    <p className="text-brand-muted text-[11px] font-bold uppercase tracking-wider mb-1">{title}</p>
+    <p className="text-brand-muted text-[10px] sm:text-[11px] font-bold uppercase tracking-wider mb-1">{title}</p>
     <div className="flex items-baseline gap-2">
-      <h3 className="text-brand-depth font-sans font-bold text-2xl">{value}</h3>
+      <h3 className="text-xl sm:text-2xl font-bold text-brand-depth font-sans">{value}</h3>
     </div>
   </div>
 );
@@ -65,40 +65,40 @@ const DirectorView: React.FC = () => {
 
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-700">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="space-y-4 sm:space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-700">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <KPICard title="Jami bolalar soni" value={stats?.total || 0} change="2" trend="up" icon={Users} color="bg-brand-primary" />
         <KPICard title="9 gacha kelganlar" value={(stats?.present || 0) - (stats?.late || 0)} change="5" trend="up" icon={ClipboardCheck} color="bg-brand-emerald" />
         <KPICard title="9 dan keyin kelganlar" value={stats?.late || 0} change="0" trend="down" icon={ClipboardCheck} color="bg-brand-amber" />
         <KPICard title="Bugungi davomat (%)" value={`${stats?.total ? Math.round((stats.present / stats.total) * 100) : 0}%`} change="1" trend="up" icon={TrendingUp} color="bg-brand-primary" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
         <div className="lg:col-span-8">
           <OperationsLog />
         </div>
 
-        <div className="lg:col-span-4 space-y-6">
-          <div className="bg-white rounded-xl p-6 border border-brand-border shadow-sm">
-            <div className="flex justify-between items-center mb-6">
-              <h4 className="font-sans font-bold text-base">Bugungi Menu</h4>
-              <span className="px-2 py-1 bg-brand-primary/10 text-brand-primary text-[10px] font-bold rounded-full uppercase tracking-tighter">Admin tomonidan</span>
+        <div className="lg:col-span-4 space-y-4 sm:space-y-6">
+          <div className="bg-white rounded-xl p-4 sm:p-6 border border-brand-border shadow-sm">
+            <div className="flex justify-between items-center mb-4 sm:mb-6">
+              <h4 className="font-sans font-bold text-sm sm:text-base">Bugungi Menu</h4>
+              <span className="px-2 py-1 bg-brand-primary/10 text-brand-primary text-[9px] sm:text-[10px] font-bold rounded-full uppercase tracking-tighter">Admin</span>
             </div>
             <div className="space-y-3">
               {menu.length === 0 ? (
-                <div className="py-6 text-center text-brand-muted text-[10px] font-bold uppercase tracking-widest border-2 border-dashed border-slate-100 rounded-xl">
+                <div className="py-6 text-center text-brand-muted text-[9px] sm:text-[10px] font-bold uppercase tracking-widest border-2 border-dashed border-slate-100 rounded-xl">
                   Bugun uchun menu kiritilmagan
                 </div>
               ) : (
                 menu.map((item, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-brand-primary font-bold text-[10px] border border-brand-border">
+                  <div key={i} className="flex items-center justify-between p-2.5 sm:p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-white flex items-center justify-center text-brand-primary font-bold text-[9px] sm:text-[10px] border border-brand-border">
                         {item.meal_type === 'NONUSHTA' ? 'NO' : item.meal_type === 'TUSHLIK' ? 'TU' : 'KE'}
                       </div>
-                      <div>
-                        <p className="text-xs font-bold text-brand-depth">{item.meal_name}</p>
-                        <p className="text-[9px] text-brand-muted uppercase font-bold tracking-tight">{item.calories} kkal • {item.meal_type}</p>
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-brand-depth truncate">{item.meal_name}</p>
+                        <p className="text-[8px] sm:text-[9px] text-brand-muted uppercase font-bold tracking-tight">{item.calories} kkal • {item.meal_type}</p>
                       </div>
                     </div>
                   </div>
@@ -107,36 +107,36 @@ const DirectorView: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl p-6 border border-brand-border shadow-sm">
-            <div className="flex justify-between items-center mb-6">
-              <h4 className="font-sans font-bold text-base">Laboratoriya & Sinama</h4>
-              <span className="px-2 py-1 bg-brand-emerald/10 text-brand-emerald text-[10px] font-bold rounded-full uppercase tracking-tighter">Analizlar</span>
+          <div className="bg-white rounded-xl p-4 sm:p-6 border border-brand-border shadow-sm">
+            <div className="flex justify-between items-center mb-4 sm:mb-6">
+              <h4 className="font-sans font-bold text-sm sm:text-base">Laboratoriya & Sinama</h4>
+              <span className="px-2 py-1 bg-brand-emerald/10 text-brand-emerald text-[9px] sm:text-[10px] font-bold rounded-full uppercase tracking-tighter">Analizlar</span>
             </div>
             <div className="space-y-4">
               {stats?.approved_recipes > 0 ? (
-                <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-xl flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center text-white shrink-0">
-                    <ClipboardCheck size={20} />
+                <div className="bg-emerald-50 border border-emerald-100 p-3 sm:p-4 rounded-xl flex items-center gap-3">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-emerald-500 flex items-center justify-center text-white shrink-0">
+                    <ClipboardCheck size={18} className="sm:w-5 sm:h-5" />
                   </div>
                   <div>
-                    <p className="text-xs font-black text-emerald-600 uppercase">Ovqat retsepti</p>
-                    <p className="text-sm font-bold text-brand-depth">Tasdiqlangan</p>
+                    <p className="text-[10px] font-black text-emerald-600 uppercase">Ovqat retsepti</p>
+                    <p className="text-xs sm:text-sm font-bold text-brand-depth">Tasdiqlangan</p>
                   </div>
                 </div>
               ) : (
-                <div className="bg-amber-50 border border-amber-100 p-4 rounded-xl flex items-center justify-between gap-3">
+                <div className="bg-amber-50 border border-amber-100 p-3 sm:p-4 rounded-xl flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-amber-500 flex items-center justify-center text-white shrink-0">
-                      <AlertCircle size={20} />
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-amber-500 flex items-center justify-center text-white shrink-0">
+                      <AlertCircle size={18} className="sm:w-5 sm:h-5" />
                     </div>
                     <div>
-                      <p className="text-xs font-black text-amber-600 uppercase">Ovqat retsepti</p>
-                      <p className="text-sm font-bold text-brand-depth">Tasdiqlanmagan</p>
+                      <p className="text-[10px] font-black text-amber-600 uppercase">Ovqat retsepti</p>
+                      <p className="text-xs sm:text-sm font-bold text-brand-depth">Tasdiqlanmagan</p>
                     </div>
                   </div>
                   <button 
                     onClick={handleApproveMenu}
-                    className="px-3 py-1.5 bg-brand-primary text-white text-[10px] font-black uppercase rounded-lg hover:bg-brand-primary-dark transition-colors shadow-lg shadow-brand-primary/20"
+                    className="px-2.5 py-1 sm:px-3 sm:py-1.5 bg-brand-primary text-white text-[9px] sm:text-[10px] font-black uppercase rounded-lg hover:bg-brand-primary-dark transition-colors shadow-lg shadow-brand-primary/20"
                   >
                     Tasdiqlash
                   </button>
@@ -145,18 +145,18 @@ const DirectorView: React.FC = () => {
 
               <div className="space-y-3">
                 {samples.length === 0 ? (
-                  <div className="py-10 text-center text-brand-muted text-[10px] font-bold uppercase tracking-widest border-2 border-dashed border-slate-100 rounded-xl">
+                  <div className="py-8 sm:py-10 text-center text-brand-muted text-[9px] sm:text-[10px] font-bold uppercase tracking-widest border-2 border-dashed border-slate-100 rounded-xl">
                     Analizlar mavjud emas
                   </div>
                 ) : (
                   samples.map((s, i) => (
-                    <div key={i} className="p-4 bg-slate-50 rounded-xl border border-slate-100 hover:border-brand-primary/20 transition-all group">
+                    <div key={i} className="p-3 sm:p-4 bg-slate-50 rounded-xl border border-slate-100 hover:border-brand-primary/20 transition-all group">
                       <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <p className="text-sm font-bold text-brand-depth">{s.dish_name}</p>
-                          <p className="text-[9px] text-brand-muted font-bold">{new Date(s.timestamp).toLocaleString()}</p>
+                        <div className="min-w-0">
+                          <p className="text-xs sm:text-sm font-bold text-brand-depth truncate">{s.dish_name}</p>
+                          <p className="text-[8px] sm:text-[9px] text-brand-muted font-bold">{new Date(s.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                         </div>
-                        <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase border ${
+                        <span className={`px-1.5 py-0.5 rounded-lg text-[8px] sm:text-[9px] font-black uppercase border shrink-0 ${
                           s.risk_level === 'NORMAL' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
                           s.risk_level === 'WARNING' ? 'bg-amber-50 text-amber-600 border-amber-100' : 
                           'bg-rose-50 text-rose-600 border-rose-100 animate-pulse'
@@ -166,20 +166,20 @@ const DirectorView: React.FC = () => {
                       </div>
                       
                       {s.test_results && (
-                        <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-slate-200">
+                        <div className="grid grid-cols-3 gap-2 mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-slate-200">
                           <div className="text-center">
                             <p className="text-[7px] font-black text-brand-muted uppercase">pH</p>
-                            <p className="text-[10px] font-black text-brand-depth">{s.test_results.ph_level}</p>
+                            <p className="text-[9px] sm:text-[10px] font-black text-brand-depth">{s.test_results.ph_level}</p>
                           </div>
                           <div className="text-center border-x border-slate-200">
                             <p className="text-[7px] font-black text-brand-muted uppercase">Bakteriya</p>
-                            <p className={`text-[10px] font-black ${s.test_results.bacterial_check === 'PASS' ? 'text-emerald-600' : 'text-rose-500'}`}>
+                            <p className={`text-[9px] sm:text-[10px] font-black ${s.test_results.bacterial_check === 'PASS' ? 'text-emerald-600' : 'text-rose-500'}`}>
                               {s.test_results.bacterial_check === 'PASS' ? 'OK' : 'XAVF'}
                             </p>
                           </div>
                           <div className="text-center">
                             <p className="text-[7px] font-black text-brand-muted uppercase">Organolep.</p>
-                            <p className="text-[10px] font-black text-emerald-600">OK</p>
+                            <p className="text-[9px] sm:text-[10px] font-black text-emerald-600">OK</p>
                           </div>
                         </div>
                       )}
@@ -188,18 +188,18 @@ const DirectorView: React.FC = () => {
                 )}
               </div>
               
-              <div className="bg-slate-50 p-4 rounded-xl flex items-center gap-3 border border-slate-100 mt-4">
-                 <div className="p-2 bg-white rounded-lg border border-brand-border text-brand-emerald shadow-sm">
-                   <FlaskConical size={18} />
+              <div className="bg-slate-50 p-3 sm:p-4 rounded-xl flex items-center gap-3 border border-slate-100 mt-4">
+                 <div className="p-1.5 sm:p-2 bg-white rounded-lg border border-brand-border text-brand-emerald shadow-sm shrink-0">
+                   <FlaskConical size={16} className="sm:w-4 sm:h-4" />
                  </div>
-                 <div className="flex-1">
+                 <div className="flex-1 min-w-0">
                    <div className="flex justify-between items-center mb-1">
-                     <p className="text-xs font-bold text-brand-depth">Namuna Olish</p>
-                     <span className="text-[10px] font-black text-brand-emerald">
+                     <p className="text-[10px] sm:text-xs font-bold text-brand-depth truncate">Namuna Olish</p>
+                     <span className="text-[9px] sm:text-[10px] font-black text-brand-emerald">
                         {samples.length > 0 && menu.length > 0 ? Math.round((samples.length / menu.length) * 100) : 0}%
                      </span>
                    </div>
-                   <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                   <div className="w-full bg-slate-200 h-1 sm:h-1.5 rounded-full overflow-hidden">
                       <div 
                         className="bg-brand-emerald h-full transition-all duration-1000" 
                         style={{ width: `${samples.length > 0 && menu.length > 0 ? Math.round((samples.length / menu.length) * 100) : 0}%` }}
